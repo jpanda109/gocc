@@ -1,6 +1,21 @@
 package comm
 
-import "net"
+import (
+	"net"
+)
+
+// NewChatRoom creates and returns a chat room pointer with given password
+func NewChatRoom(password string) *ChatRoom {
+	chatRoom := &ChatRoom{
+		password,
+		make([]*Client, 0),
+		make(chan net.Conn),
+		make(chan string),
+		make(chan string),
+	}
+	chatRoom.Start()
+	return chatRoom
+}
 
 // ChatRoom handles broadcasting messages to group of containers
 type ChatRoom struct {
@@ -52,17 +67,4 @@ func (cr *ChatRoom) Broadcast(msg string) {
 // Flush sends newline to flush sockets
 func (cr *ChatRoom) Flush() {
 	cr.Broadcast("\n")
-}
-
-// NewChatRoom creates and returns a chat room pointer with given password
-func NewChatRoom(password string) *ChatRoom {
-	chatRoom := &ChatRoom{
-		password,
-		make([]*Client, 0),
-		make(chan net.Conn),
-		make(chan string),
-		make(chan string),
-	}
-	chatRoom.Start()
-	return chatRoom
 }
