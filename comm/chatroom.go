@@ -12,6 +12,7 @@ func NewChatRoom(password string) *ChatRoom {
 		make(chan net.Conn),
 		make(chan string),
 		make(chan string),
+		make(chan bool),
 	}
 	chatRoom.Start()
 	return chatRoom
@@ -24,12 +25,14 @@ type ChatRoom struct {
 	NewConnections chan net.Conn
 	Incoming       chan string
 	Outgoing       chan string
+	Quit           chan bool
 }
 
 // Start sets listener, reader, and writer
 func (cr *ChatRoom) Start() {
 	go cr.beginListen()
 	go cr.beginWrite()
+	<-cr.Quit
 }
 
 func (cr *ChatRoom) beginListen() {

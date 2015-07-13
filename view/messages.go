@@ -1,8 +1,6 @@
 package view
 
-import (
-	"github.com/nsf/termbox-go"
-)
+import "github.com/nsf/termbox-go"
 
 // NewMessages creates a new Messages object
 func NewMessages(x int, y int, w int, h int) *Messages {
@@ -12,6 +10,7 @@ func NewMessages(x int, y int, w int, h int) *Messages {
 		w,
 		h,
 		make(chan string),
+		make(chan bool),
 		make([]string, 0),
 	}
 	return messages
@@ -23,11 +22,29 @@ type Messages struct {
 	y        int
 	w        int
 	h        int
-	incoming chan string
+	Incoming chan string
+	Quit     chan bool
 	buffer   []string
 }
 
+// Start starts all listeners
+func (messages *Messages) Start() {
+	go messages.beginListen()
+	<-messages.Quit
+}
+
+func (messages *Messages) beginListen() {
+	for msg := range messages.Incoming {
+		messages.displayMessage(msg)
+	}
+}
+
 func (messages *Messages) displayMessage(msg string) {
+	lines := messages.splitMessage(msg)
+	termbox.Flush()
+}
+
+func (messages *Messages) splitMessage(msg string) []string {
 	firstLine := ""
 	remainderMsg := ""
 	if len(msg) > messages.w {
@@ -43,6 +60,9 @@ func (messages *Messages) displayMessage(msg string) {
 	if remLen := len(remainderMsg) % (messages.w - 4); remLen > 0 {
 		otherLines = append(otherLines, remainderMsg[len(remainderMsg)-remLen-1:len(remainderMsg)])
 	}
-	lines := (len(msg)-messages.w)/(messages.w-4) + 1
-	termbox.Flush()
+	lines := []string{firstLine}
+	for _, v := range otherLines {
+		lines = append(lines, "  "+v)
+	}
+	return lines
 }
