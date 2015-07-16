@@ -11,7 +11,7 @@ func NewMessages(x int, y int, w int, h int) *Messages {
 		h,
 		make(chan string),
 		make(chan bool),
-		make([]string, 0),
+		make([]string, h),
 	}
 	return messages
 }
@@ -41,6 +41,17 @@ func (messages *Messages) beginListen() {
 
 func (messages *Messages) displayMessage(msg string) {
 	lines := messages.splitMessage(msg)
+	messages.buffer = append(lines, messages.buffer[len(lines):]...)
+	curY := messages.y + messages.h - 1
+	for _, line := range messages.buffer {
+		curX := messages.x
+		for i := 0; i < len(line); i++ {
+			char := line[i]
+			termbox.SetCell(curX, curY, rune(char), termbox.ColorWhite, termbox.ColorBlack)
+			curX++
+		}
+		curY--
+	}
 	termbox.Flush()
 }
 

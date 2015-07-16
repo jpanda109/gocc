@@ -4,20 +4,34 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-// ChatWindow handles displaying interface needed for chat
-type ChatWindow struct {
-	x int
-	y int
+// NewChatWindow creates a new chat window
+func NewChatWindow() *ChatWindow {
+	termbox.Init()
+	x, y := termbox.Size()
+	chatWindow := &ChatWindow{
+		x,
+		y,
+		NewMessages(0, 0, x, y),
+		make(chan string),
+	}
+	return chatWindow
 }
 
-// Init initializes the chat window
-func (window *ChatWindow) Init() error {
-	err := termbox.Init()
-	if err != nil {
-		return err
-	}
-	window.x, window.y = termbox.Size()
-	return nil
+// ChatWindow handles displaying interface needed for chat
+type ChatWindow struct {
+	x            int
+	y            int
+	messages     *Messages
+	incomingMsgs chan string
+}
+
+// Start starts the chat window processing
+func (window *ChatWindow) Start() {
+	window.messages.Start()
+}
+
+func (window *ChatWindow) listenMsgs() {
+
 }
 
 // Quit returns control to terminal
