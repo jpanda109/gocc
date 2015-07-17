@@ -13,6 +13,7 @@ func NewMessages(x int, y int, w int, h int) *Messages {
 		make(chan bool),
 		make([]string, h),
 	}
+	messages.Start()
 	return messages
 }
 
@@ -31,6 +32,11 @@ type Messages struct {
 func (messages *Messages) Start() {
 	go messages.beginListen()
 	<-messages.Quit
+}
+
+// Stop stops listeners and writing etc
+func (messages *Messages) Stop() {
+	messages.Quit <- true
 }
 
 func (messages *Messages) beginListen() {
