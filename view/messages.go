@@ -24,19 +24,19 @@ type Messages struct {
 	w        int
 	h        int
 	Incoming chan string
-	Quit     chan bool
+	quit     chan bool
 	buffer   []string
 }
 
 // Start starts all listeners
 func (messages *Messages) Start() {
 	go messages.beginListen()
-	<-messages.Quit
+	<-messages.quit
 }
 
 // Stop stops listeners and writing etc
 func (messages *Messages) Stop() {
-	messages.Quit <- true
+	messages.quit <- true
 }
 
 func (messages *Messages) beginListen() {
