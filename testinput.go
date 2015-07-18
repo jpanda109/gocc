@@ -10,7 +10,7 @@ import (
 func main() {
 	termbox.Init()
 	w, h := termbox.Size()
-	input := view.NewInput(0, 0, w, h)
+	input := view.NewChatInput(0, 0, w, h)
 	go input.Start()
 	eventQueue := make(chan termbox.Event)
 	go func() {
@@ -21,11 +21,15 @@ func main() {
 	go func() {
 		for event := range eventQueue {
 			if event.Key != 0 {
-				if event.Key == termbox.KeyCtrlC {
+				key := event.Key
+				switch key {
+				case termbox.KeyCtrlC:
 					input.Stop()
 					break
-				} else {
-					input.IncomingKey <- event.Key
+				case termbox.KeyBackspace:
+					input.IncCommand <- view.Backspace
+				case termbox.KeyEnter:
+					input.IncCommand <- view.Submit
 				}
 			} else {
 				input.IncomingCh <- event.Ch
