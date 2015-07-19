@@ -11,9 +11,10 @@ import (
 func NewClient(conn net.Conn) *Client {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
+	name, _ := reader.ReadString('\n')
+	name = strings.Trim(name, "\n")
 	newClient := &Client{
-		"",
-		conn,
+		name,
 		make(chan string),
 		make(chan string),
 		make(chan bool),
@@ -28,7 +29,6 @@ func NewClient(conn net.Conn) *Client {
 // Client allows for bidirectional communication
 type Client struct {
 	Name     string
-	conn     net.Conn
 	Outgoing chan string
 	Incoming chan string
 	Quit     chan bool
@@ -46,7 +46,7 @@ func (c *Client) start() {
 
 // stop stuff
 func (c *Client) stop() {
-	c.Quit <- true
+	close(c.Quit)
 	c.wg.Wait()
 }
 
@@ -58,7 +58,7 @@ func (c *Client) beginRead() {
 		msg, err := c.reader.ReadString('\n')
 		if err != nil {
 			c.stop()
-			break
+			return
 		}
 		msg = strings.Trim(msg, "\n")
 		c.Incoming <- msg
@@ -72,7 +72,7 @@ func (c *Client) beginWrite() {
 	for {
 		select {
 		case <-c.Quit:
-			break
+			return
 		case msg := <-c.Outgoing:
 			if !strings.HasSuffix(msg, "\n") {
 				msg = msg + "\n"

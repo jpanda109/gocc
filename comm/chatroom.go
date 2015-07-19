@@ -47,7 +47,7 @@ func (cr *ChatRoom) beginListen() {
 				}
 			}()
 			cr.clients = append(cr.clients, client)
-			cr.Broadcast("New Client: " + client.Name + "\n")
+			cr.Broadcast("New Client: " + client.Name)
 		} else {
 			c.Close()
 		}
@@ -65,9 +65,4 @@ func (cr *ChatRoom) Broadcast(msg string) {
 	for _, client := range cr.clients {
 		client.Outgoing <- msg
 	}
-}
-
-// Flush sends newline to flush sockets
-func (cr *ChatRoom) Flush() {
-	cr.Broadcast("\n")
 }

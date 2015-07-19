@@ -39,39 +39,6 @@ func TestClientRead(t *testing.T) {
 }
 
 func TestClientWrite(t *testing.T) {
-	// fmt.Println("testclientwrite")
-	// ln, err := net.Listen("tcp", "localhost:8090")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// connCh := make(chan net.Conn)
-	// go listen(ln, connCh)
-	// cConn, _ := net.Dial("tcp", "localhost:8090")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// sConn := <-connCh
-	// if sConn == nil {
-	// 	fmt.Println("sConn is nil")
-	// }
-	// fmt.Println(sConn.LocalAddr())
-	// client := NewClient(sConn)
-	// cWriter := bufio.NewWriter(cConn)
-	// // cReader := bufio.NewReader(cConn)
-	// go func() {
-	// 	cWriter.WriteString("HI\n")
-	// 	cWriter.WriteString("BYE\n")
-	// 	cWriter.Flush()
-	// }()
-	// if hi := <-client.Incoming; hi != "HI" {
-	// 	t.Error("error")
-	// }
-	// if bye := <-client.Incoming; bye != "BYE" {
-	// 	t.Error("error")
-	// }
-	// cConn.Close()
-	// sConn.Close()
-	// ln.Close()
 	fmt.Println("test write")
 	ln, err := net.Listen("tcp", "localhost:8090")
 	if err != nil {
