@@ -5,10 +5,10 @@ import (
 )
 
 // NewChatRoom creates and returns a chat room pointer with given password
-func NewChatRoom(password string) *ChatRoom {
+func NewChatRoom() *ChatRoom {
 	chatRoom := &ChatRoom{
-		password,
 		make([]*Client, 0),
+		make([]string, 0),
 		make(chan net.Conn),
 		make(chan string),
 		make(chan string),
@@ -20,8 +20,8 @@ func NewChatRoom(password string) *ChatRoom {
 
 // ChatRoom handles broadcasting messages to group of containers
 type ChatRoom struct {
-	password       string
 	clients        []*Client
+	Whitelist      []string
 	NewConnections chan net.Conn
 	Incoming       chan string
 	Outgoing       chan string
@@ -38,8 +38,7 @@ func (cr *ChatRoom) Start() {
 func (cr *ChatRoom) beginListen() {
 	for c := range cr.NewConnections {
 		client := NewClient(c)
-		clientPass := <-client.Incoming
-		if clientPass == cr.password {
+		if cr.whitelisted(c.RemoteAddr().String()) {
 			client.Name = <-client.Incoming
 			go func() {
 				for {
@@ -65,4 +64,13 @@ func (cr *ChatRoom) Broadcast(msg string) {
 	for _, client := range cr.clients {
 		client.Outgoing <- msg
 	}
+}
+
+func (cr *ChatRoom) whitelisted(addr string) bool {
+	for _, a := range cr.Whitelist {
+		if a == addr {
+			return true
+		}
+	}
+	return false
 }
