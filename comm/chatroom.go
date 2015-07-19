@@ -2,13 +2,14 @@ package comm
 
 import (
 	"net"
+	"strings"
 )
 
-// NewChatRoom creates and returns a chat room pointer with given password
+// NewChatRoom creates and returns a chat room reference
 func NewChatRoom() *ChatRoom {
 	chatRoom := &ChatRoom{
 		make([]*Client, 0),
-		make([]string, 0),
+		[]string{"127.0.0.1"},
 		make(chan net.Conn),
 		make(chan string),
 		make(chan string),
@@ -32,21 +33,19 @@ type ChatRoom struct {
 func (cr *ChatRoom) Start() {
 	go cr.beginListen()
 	go cr.beginWrite()
-	<-cr.Quit
 }
 
 func (cr *ChatRoom) beginListen() {
 	for c := range cr.NewConnections {
 		client := NewClient(c)
 		if cr.whitelisted(c.RemoteAddr().String()) {
-			client.Name = <-client.Incoming
 			go func() {
 				for {
 					cr.Incoming <- <-client.Incoming
 				}
 			}()
 			cr.clients = append(cr.clients, client)
-			cr.Broadcast("New Client: " + client.Name)
+			// cr.Broadcast("New Client: " + client.Name)
 		} else {
 			c.Close()
 		}
@@ -68,7 +67,7 @@ func (cr *ChatRoom) Broadcast(msg string) {
 
 func (cr *ChatRoom) whitelisted(addr string) bool {
 	for _, a := range cr.Whitelist {
-		if a == addr {
+		if strings.HasPrefix(addr, a) {
 			return true
 		}
 	}
