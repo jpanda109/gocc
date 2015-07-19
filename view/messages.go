@@ -10,7 +10,6 @@ func NewMessages(x int, y int, w int, h int) *Messages {
 		w,
 		h,
 		make(chan string),
-		make(chan bool),
 		make([]string, h),
 	}
 	messages.Start()
@@ -24,19 +23,17 @@ type Messages struct {
 	w        int
 	h        int
 	Incoming chan string
-	quit     chan bool
 	buffer   []string
 }
 
 // Start starts all listeners
 func (messages *Messages) Start() {
 	go messages.beginListen()
-	<-messages.quit
 }
 
 // Stop stops listeners and writing etc
 func (messages *Messages) Stop() {
-	messages.quit <- true
+	close(messages.Incoming)
 }
 
 func (messages *Messages) beginListen() {
@@ -47,8 +44,8 @@ func (messages *Messages) beginListen() {
 
 func (messages *Messages) displayMessage(msg string) {
 	lines := messages.splitMessage(msg)
-	messages.buffer = append(lines, messages.buffer[len(lines):]...)
-	curY := messages.y + messages.h - 1
+	messages.buffer = append(lines, messages.buffer[:messages.h-len(lines)]...)
+	curY := messages.y + messages.h - 2
 	for _, line := range messages.buffer {
 		curX := messages.x
 		for i := 0; i < len(line); i++ {

@@ -11,8 +11,9 @@ func NewChatWindow(x int, y int, w int, h int) *ChatWindow {
 		y,
 		w,
 		h,
-		NewMessages(0, 0, x-1, y-1),
+		NewMessages(0, 0, w-1, h-1),
 		NewChatInput(x, y+h-2, w, 2),
+		make(chan string),
 		make(chan string),
 		make(chan termbox.Event),
 		make(chan bool),
@@ -29,36 +30,51 @@ type ChatWindow struct {
 	h            int
 	messages     *Messages
 	chatInput    *ChatInput
-	incomingMsgs chan string
-	events       chan termbox.Event
+	IncomingMsgs chan string
+	OutgoingMsgs chan string
+	Events       chan termbox.Event
 	quit         chan bool
 }
 
 // Start starts the chat window processing
 func (window *ChatWindow) Start() {
-	window.messages.Start()
-	go window.listenInput()
+	go window.listenEvents()
 	go window.listenMsgs()
-	<-window.quit
+	go window.listenInput()
 }
 
 // Stop stops the chat window processing
 func (window *ChatWindow) Stop() {
-	window.quit <- true
 	window.messages.Stop()
 	window.chatInput.Stop()
 	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
+	termbox.Flush()
+	close(window.IncomingMsgs)
+	close(window.OutgoingMsgs)
+	close(window.Events)
+	close(window.quit)
+}
+
+func (window *ChatWindow) listenEvents() {
+	for event := range window.Events {
+		switch {
+		case event.Key != 0:
+			window.chatInput.IncomingKey <- event.Key
+		case event.Ch != 0:
+			window.chatInput.IncomingCh <- event.Ch
+		}
+	}
 }
 
 func (window *ChatWindow) listenInput() {
-	for {
-		window.events <- termbox.PollEvent()
+	for msg := range window.chatInput.OutgoingMessages {
+		window.OutgoingMsgs <- msg
 	}
 }
 
 func (window *ChatWindow) listenMsgs() {
 	for {
-		window.messages.Incoming <- <-window.incomingMsgs
+		window.messages.Incoming <- <-window.IncomingMsgs
 	}
 }
 
@@ -66,5 +82,4 @@ func (window *ChatWindow) listenMsgs() {
 func (window *ChatWindow) Quit() {
 	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
 	termbox.Flush()
-	termbox.Close()
 }

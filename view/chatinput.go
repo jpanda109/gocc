@@ -10,23 +10,13 @@ func NewChatInput(x int, y int, w int, h int) *ChatInput {
 		w,
 		h,
 		make(chan rune),
-		make(chan Command),
+		make(chan termbox.Key),
 		make(chan string),
 		make([]rune, 0),
-		make(chan bool),
 	}
+	input.Start()
 	return input
 }
-
-// Command is command to be sent to chat input
-type Command int
-
-const (
-	// Backspace deletes last char
-	Backspace Command = iota
-	// Submit deletes and sends buffer to outgoing messages channel
-	Submit
-)
 
 // ChatInput displays input to screen
 type ChatInput struct {
@@ -35,22 +25,18 @@ type ChatInput struct {
 	w                int
 	h                int
 	IncomingCh       chan rune
-	IncCommand       chan Command
+	IncomingKey      chan termbox.Key
 	OutgoingMessages chan string
 	buffer           []rune
-	quit             chan bool
 }
 
 // Start begins input handling and displaying
 func (input *ChatInput) Start() {
 	go input.handleInput()
-	<-input.quit
 }
 
 // Stop stops the input from doing anything
 func (input *ChatInput) Stop() {
-	input.quit <- true
-	termbox.Clear(termbox.ColorWhite, termbox.ColorBlack)
 	termbox.Flush()
 	close(input.OutgoingMessages)
 }
@@ -62,14 +48,14 @@ func (input *ChatInput) handleInput() {
 			if len(input.buffer) < input.w {
 				input.buffer = append(input.buffer, ch)
 			}
-		case command := <-input.IncCommand:
-			switch command {
-			case Submit:
+		case key := <-input.IncomingKey:
+			switch key {
+			case termbox.KeyEnter:
 				if len(input.buffer) < input.w {
 					input.OutgoingMessages <- string(input.buffer[:])
 					input.buffer = make([]rune, 0)
 				}
-			case Backspace:
+			case termbox.KeyBackspace:
 				if len(input.buffer) > 0 {
 					input.buffer = input.buffer[:len(input.buffer)-1]
 				}

@@ -44,8 +44,8 @@ func (c *Client) start() {
 	go c.beginWrite()
 }
 
-// stop stuff
-func (c *Client) stop() {
+// Stop stuff
+func (c *Client) Stop() {
 	close(c.Quit)
 	c.wg.Wait()
 }
@@ -57,7 +57,7 @@ func (c *Client) beginRead() {
 	for {
 		msg, err := c.reader.ReadString('\n')
 		if err != nil {
-			c.stop()
+			c.Stop()
 			return
 		}
 		msg = strings.Trim(msg, "\n")
