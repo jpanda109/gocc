@@ -5,81 +5,58 @@ import (
 )
 
 // NewChatWindow creates a new chat window
-func NewChatWindow(x int, y int, w int, h int) *ChatWindow {
-	chatWindow := &ChatWindow{
-		x,
-		y,
+func NewChatWindow() *ChatWindow {
+	w, h := termbox.Size()
+	window := &ChatWindow{
 		w,
 		h,
-		NewMessages(0, 0, w-1, h-1),
-		NewChatInput(x, y+h-2, w, 2),
-		make(chan string),
-		make(chan string),
-		make(chan termbox.Event),
-		make(chan bool),
+		make(chan []rune),
+		make(chan []rune),
+		make([][]rune, h-2),
 	}
-	chatWindow.Start()
-	return chatWindow
+	window.start()
+	return window
 }
 
-// ChatWindow handles displaying and gathering use input interface needed for chat
+// ChatWindow displays current editing buffer and messages
 type ChatWindow struct {
-	x            int
-	y            int
-	w            int
-	h            int
-	messages     *Messages
-	chatInput    *ChatInput
-	IncomingMsgs chan string
-	OutgoingMsgs chan string
-	Events       chan termbox.Event
-	quit         chan bool
+	w          int
+	h          int
+	EditBuffer chan []rune
+	MsgQ       chan []rune
+	msgs       [][]rune
 }
 
-// Start starts the chat window processing
-func (window *ChatWindow) Start() {
-	go window.listenEvents()
+func (window *ChatWindow) start() {
+	go window.listenEdits()
 	go window.listenMsgs()
-	go window.listenInput()
 }
 
-// Stop stops the chat window processing
-func (window *ChatWindow) Stop() {
-	window.messages.Stop()
-	window.chatInput.Stop()
-	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
-	termbox.Flush()
-	close(window.IncomingMsgs)
-	close(window.OutgoingMsgs)
-	close(window.Events)
-	close(window.quit)
-}
-
-func (window *ChatWindow) listenEvents() {
-	for event := range window.Events {
-		switch {
-		case event.Key != 0:
-			window.chatInput.IncomingKey <- event.Key
-		case event.Ch != 0:
-			window.chatInput.IncomingCh <- event.Ch
+func (window *ChatWindow) listenEdits() {
+	for b := range window.EditBuffer {
+		for x := 0; x < window.w; x++ {
+			termbox.SetCell(x, window.h-1, ' ', termbox.ColorBlack, termbox.ColorBlack)
 		}
-	}
-}
-
-func (window *ChatWindow) listenInput() {
-	for msg := range window.chatInput.OutgoingMessages {
-		window.OutgoingMsgs <- msg
+		for x, ch := range b {
+			termbox.SetCell(x, window.h-1, ch, termbox.ColorWhite, termbox.ColorBlack)
+		}
+		termbox.Flush()
 	}
 }
 
 func (window *ChatWindow) listenMsgs() {
-	for {
-		window.messages.Incoming <- <-window.IncomingMsgs
+	for m := range window.MsgQ {
+		window.msgs = append([][]rune{m}, window.msgs[:window.h-3]...)
+		y := window.h - 3
+		for _, line := range window.msgs {
+			for x := 0; x < window.w; x++ {
+				termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
+			}
+			for x := 0; x < len(line); x++ {
+				termbox.SetCell(x, y, rune(line[x]), termbox.ColorWhite, termbox.ColorBlack)
+			}
+			y--
+		}
+		termbox.Flush()
 	}
-}
-
-// Quit returns control to terminal
-func (window *ChatWindow) Quit() {
-	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
-	termbox.Flush()
 }

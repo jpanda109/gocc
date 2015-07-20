@@ -11,7 +11,7 @@ import (
 
 const msglen = 256
 
-func startApp(password string, port string, debug bool) {
+func startApp(port string, debug bool) {
 	listenerAddr := ":" + port
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
@@ -22,7 +22,7 @@ func startApp(password string, port string, debug bool) {
 		os.Exit(-1)
 	}
 	fmt.Printf("Listening at %s\n", ln.Addr())
-	chatroom := comm.NewChatRoom(password)
+	chatroom := comm.NewChatRoom()
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -35,11 +35,6 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "password, pass",
-			Value: "secret",
-			Usage: "password for chat room",
-		},
-		cli.StringFlag{
 			Name:  "port",
 			Value: "8080",
 			Usage: "Port to connect or listen to",
@@ -51,7 +46,6 @@ func main() {
 	}
 	app.Action = func(c *cli.Context) {
 		startApp(
-			c.String("password"),
 			c.String("port"),
 			c.BoolT("debug"),
 		)
