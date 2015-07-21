@@ -21,7 +21,7 @@ func NewConnHandler(addr string, name string) *ConnHandler {
 // ConnHandler listens for new connections and connets to new ones
 type ConnHandler struct {
 	addr       string
-	addrs      []string
+	addrs      []string // addr:name
 	NewClients chan *Client
 }
 
@@ -30,7 +30,7 @@ func (handler *ConnHandler) Listen() {
 	go handler.listenConns()
 }
 
-// Dial connects to server at address
+// Dial connects to server at address (maybe make newclient in goroutine?)
 func (handler *ConnHandler) Dial(addr string) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
