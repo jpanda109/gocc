@@ -8,11 +8,9 @@ import (
 )
 
 // NewClient initializes client to 0 state, blocks until connection sends name
-func NewClient(conn net.Conn) *Client {
+func NewClient(conn net.Conn, name string) *Client {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
-	name, _ := reader.ReadString('\n')
-	name = strings.Trim(name, "\n")
 	newClient := &Client{
 		name,
 		make(chan string),

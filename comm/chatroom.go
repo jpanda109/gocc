@@ -1,16 +1,10 @@
 package comm
 
-import (
-	"net"
-	"strings"
-)
-
 // NewChatRoom creates and returns a chat room reference
 func NewChatRoom() *ChatRoom {
 	chatRoom := &ChatRoom{
 		make([]*Client, 0),
-		[]string{"127.0.0.1"},
-		make(chan net.Conn),
+		make(chan *Client),
 		make(chan string),
 		make(chan string),
 	}
@@ -20,11 +14,10 @@ func NewChatRoom() *ChatRoom {
 
 // ChatRoom handles broadcasting messages to group of containers
 type ChatRoom struct {
-	clients        []*Client
-	Whitelist      []string
-	NewConnections chan net.Conn
-	Incoming       chan string
-	Outgoing       chan string
+	clients    []*Client
+	NewClients chan *Client
+	Incoming   chan string
+	Outgoing   chan string
 }
 
 // Start sets listener, reader, and writer
@@ -34,19 +27,8 @@ func (cr *ChatRoom) Start() {
 }
 
 func (cr *ChatRoom) beginListen() {
-	for c := range cr.NewConnections {
-		client := NewClient(c)
-		if cr.whitelisted(c.RemoteAddr().String()) {
-			go func() {
-				for {
-					cr.Incoming <- <-client.Incoming
-				}
-			}()
-			cr.clients = append(cr.clients, client)
-			// cr.Broadcast("New Client: " + client.Name)
-		} else {
-			c.Close()
-		}
+	for c := range cr.NewClients {
+		cr.clients = append(cr.clients, c)
 	}
 }
 
@@ -61,13 +43,4 @@ func (cr *ChatRoom) Broadcast(msg string) {
 	for _, client := range cr.clients {
 		client.Outgoing <- msg
 	}
-}
-
-func (cr *ChatRoom) whitelisted(addr string) bool {
-	for _, a := range cr.Whitelist {
-		if strings.HasPrefix(addr, a) {
-			return true
-		}
-	}
-	return false
 }

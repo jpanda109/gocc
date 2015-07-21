@@ -32,6 +32,14 @@ func (window *ChatWindow) start() {
 	go window.listenMsgs()
 }
 
+// Stop closes channels and clears screen
+func (window *ChatWindow) Stop() {
+	close(window.EditBuffer)
+	close(window.MsgQ)
+	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
+	termbox.Flush()
+}
+
 func (window *ChatWindow) listenEdits() {
 	for b := range window.EditBuffer {
 		for x := 0; x < window.w; x++ {

@@ -1,8 +1,6 @@
-package notmain
+package main
 
 import (
-	"fmt"
-	"net"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -11,23 +9,17 @@ import (
 
 const msglen = 256
 
-func startApp(port string, debug bool) {
+func startApp(port string, debug bool, connect string, name string) {
 	listenerAddr := ":" + port
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
 	}
-	ln, err := net.Listen("tcp", listenerAddr)
-	if err != nil {
-		fmt.Println("Error in setting up tcp listener")
-		os.Exit(-1)
+	handler := comm.NewConnHandler(listenerAddr, name)
+	if connect != "" {
+		go handler.Dial(connect)
 	}
-	fmt.Printf("Listening at %s\n", ln.Addr())
-	chatroom := comm.NewChatRoom()
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-		}
-		chatroom.NewConnections <- conn
+		c := <-handler.NewClients
 	}
 }
 
@@ -37,17 +29,29 @@ func main() {
 		cli.StringFlag{
 			Name:  "port",
 			Value: "8080",
-			Usage: "Port to connect or listen to",
+			Usage: "Port listen to",
 		},
 		cli.BoolTFlag{
 			Name:  "debug",
 			Usage: "Sets server to localhost only",
+		},
+		cli.StringFlag{
+			Name:  "connect",
+			Value: "",
+			Usage: "Address to connect to",
+		},
+		cli.StringFlag{
+			Name:  "name",
+			Value: "anon",
+			Usage: "Name with which to identify",
 		},
 	}
 	app.Action = func(c *cli.Context) {
 		startApp(
 			c.String("port"),
 			c.BoolT("debug"),
+			c.String("connect"),
+			c.String("name"),
 		)
 	}
 	app.Run(os.Args)
