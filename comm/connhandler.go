@@ -14,7 +14,6 @@ func NewConnHandler(addr string, name string) *ConnHandler {
 		[]string{addr + "," + name},
 		make(chan *Client),
 	}
-	handler.Listen()
 	return handler
 }
 
@@ -44,7 +43,7 @@ func (handler *ConnHandler) Dial(addr string) {
 	handler.addrs = append(handler.addrs, addrs...)
 	writer.WriteString(handler.addrs[0] + "\n")
 	writer.Flush()
-	handler.NewClients <- NewClient(conn, strings.Split(addrs[0], ",")[1])
+	clients := []*Client{NewClient(conn, strings.Split(addrs[0], ",")[1])}
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
@@ -53,8 +52,13 @@ func (handler *ConnHandler) Dial(addr string) {
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
-		handler.NewClients <- NewClient(c, info[1])
+		clients = append(clients, NewClient(c, info[1]))
 	}
+	go func() {
+		for _, c := range clients {
+			handler.NewClients <- c
+		}
+	}()
 	fmt.Println(handler.addrs)
 }
 
