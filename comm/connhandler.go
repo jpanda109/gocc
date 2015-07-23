@@ -2,6 +2,7 @@ package comm
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"strings"
 )
@@ -59,6 +60,7 @@ func (handler *ConnHandler) Dial(addr string) {
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
 	}
+	fmt.Println(handler.chatroom.peers)
 }
 
 func (handler *ConnHandler) listenConns() {
@@ -83,5 +85,6 @@ func (handler *ConnHandler) listenConns() {
 			info := strings.Split(line, ",")
 			handler.chatroom.AddPeer(conn, info[0], info[1])
 		}
+		fmt.Println(handler.chatroom.peers)
 	}
 }
