@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -20,10 +19,6 @@ func startApp(port string, debug bool, connect string, name string) {
 		handler.Dial(connect)
 	}
 	handler.Listen()
-	for {
-		c := <-handler.NewClients
-		fmt.Println(c.Name)
-	}
 }
 
 func main() {

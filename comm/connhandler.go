@@ -11,25 +11,30 @@ import (
 func NewConnHandler(addr string, name string) *ConnHandler {
 	handler := &ConnHandler{
 		addr,
-		[]string{addr + "," + name},
-		make(chan *Client),
+		name,
+		[]*Peer{},
 	}
 	return handler
 }
 
 // ConnHandler listens for new connections and connets to new ones
 type ConnHandler struct {
-	addr       string
-	addrs      []string // addr:name
-	NewClients chan *Client
+	addr  string
+	name  string
+	peers []*Peer
+}
+
+// String returns string repr of conn handler
+func (handler *ConnHandler) String() string {
+	return handler.addr + "," + handler.name
 }
 
 // Listen begins listener
 func (handler *ConnHandler) Listen() {
-	go handler.listenConns()
+	handler.listenConns()
 }
 
-// Dial connects to server at address (maybe make newclient in goroutine?)
+// Dial connects to server at address
 func (handler *ConnHandler) Dial(addr string) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
@@ -40,26 +45,22 @@ func (handler *ConnHandler) Dial(addr string) {
 	line, _ := reader.ReadString('\n')
 	line = strings.Trim(line, "\n")
 	addrs := strings.Split(line, ";")
-	handler.addrs = append(handler.addrs, addrs...)
-	writer.WriteString(handler.addrs[0] + "\n")
+	for _, a := range addrs {
+		info := strings.Split(a, ",")
+		handler.peers = append(handler.peers, NewPeer(conn, info[0], info[1]))
+	}
+	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
-	clients := []*Client{NewClient(conn, strings.Split(addrs[0], ",")[1])}
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
 		writer = bufio.NewWriter(c)
-		writer.WriteString(handler.addrs[0] + "\n")
+		writer.WriteString(handler.String() + "\n")
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
-		clients = append(clients, NewClient(c, info[1]))
 	}
-	go func() {
-		for _, c := range clients {
-			handler.NewClients <- c
-		}
-	}()
-	fmt.Println(handler.addrs)
+	fmt.Println(handler.peers)
 }
 
 func (handler *ConnHandler) listenConns() {
@@ -72,21 +73,18 @@ func (handler *ConnHandler) listenConns() {
 		if err == nil {
 			writer := bufio.NewWriter(conn)
 			reader := bufio.NewReader(conn)
-			for i, a := range handler.addrs {
-				writer.WriteString(a)
-				if i < len(handler.addrs)-1 {
-					writer.WriteString(";")
-				}
+			writer.WriteString(handler.String())
+			for _, p := range handler.peers {
+				writer.WriteString(";")
+				writer.WriteString(p.String())
 			}
 			writer.WriteString("\n")
 			writer.Flush()
 			line, _ := reader.ReadString('\n')
 			line = strings.Trim(line, "\n")
 			info := strings.Split(line, ",")
-			name := info[1]
-			handler.NewClients <- NewClient(conn, name)
-			handler.addrs = append(handler.addrs, line)
-			fmt.Println(handler.addrs)
+			handler.peers = append(handler.peers, NewPeer(conn, info[0], info[1]))
+			fmt.Println(handler.peers)
 		}
 	}
 }
