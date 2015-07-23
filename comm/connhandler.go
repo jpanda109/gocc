@@ -2,7 +2,6 @@ package comm
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"strings"
 )
@@ -12,16 +11,16 @@ func NewConnHandler(addr string, name string) *ConnHandler {
 	handler := &ConnHandler{
 		addr,
 		name,
-		[]*Peer{},
+		NewChatRoom(),
 	}
 	return handler
 }
 
 // ConnHandler listens for new connections and connets to new ones
 type ConnHandler struct {
-	addr  string
-	name  string
-	peers []*Peer
+	addr     string
+	name     string
+	chatroom *ChatRoom
 }
 
 // String returns string repr of conn handler
@@ -47,7 +46,7 @@ func (handler *ConnHandler) Dial(addr string) {
 	addrs := strings.Split(line, ";")
 	for _, a := range addrs {
 		info := strings.Split(a, ",")
-		handler.peers = append(handler.peers, NewPeer(conn, info[0], info[1]))
+		handler.chatroom.AddPeer(conn, info[0], info[1])
 	}
 	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
@@ -60,7 +59,6 @@ func (handler *ConnHandler) Dial(addr string) {
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
 	}
-	fmt.Println(handler.peers)
 }
 
 func (handler *ConnHandler) listenConns() {
@@ -74,7 +72,7 @@ func (handler *ConnHandler) listenConns() {
 			writer := bufio.NewWriter(conn)
 			reader := bufio.NewReader(conn)
 			writer.WriteString(handler.String())
-			for _, p := range handler.peers {
+			for _, p := range handler.chatroom.peers {
 				writer.WriteString(";")
 				writer.WriteString(p.String())
 			}
@@ -83,8 +81,7 @@ func (handler *ConnHandler) listenConns() {
 			line, _ := reader.ReadString('\n')
 			line = strings.Trim(line, "\n")
 			info := strings.Split(line, ",")
-			handler.peers = append(handler.peers, NewPeer(conn, info[0], info[1]))
-			fmt.Println(handler.peers)
+			handler.chatroom.AddPeer(conn, info[0], info[1])
 		}
 	}
 }

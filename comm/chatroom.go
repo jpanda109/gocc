@@ -1,46 +1,83 @@
 package comm
 
-// NewChatRoom creates and returns a chat room reference
+import "net"
+
+// NewChatRoom creates and returns a pointer to chat room
 func NewChatRoom() *ChatRoom {
-	chatRoom := &ChatRoom{
-		make([]*Client, 0),
-		make(chan *Client),
+	room := &ChatRoom{
+		make(chan peerRemoval),
+		make(chan peerAddition),
 		make(chan string),
 		make(chan string),
+		[]*Peer{},
 	}
-	chatRoom.Start()
-	return chatRoom
+	room.start()
+	return room
 }
 
-// ChatRoom handles broadcasting messages to group of containers
+// ChatRoom sends and receives messages to peers
 type ChatRoom struct {
-	clients    []*Client
-	NewClients chan *Client
-	Incoming   chan string
-	Outgoing   chan string
+	removalQueue  chan peerRemoval
+	additionQueue chan peerAddition
+	Incoming      chan string
+	Outgoing      chan string
+	peers         []*Peer
 }
 
-// Start sets listener, reader, and writer
-func (cr *ChatRoom) Start() {
-	go cr.beginListen()
-	go cr.beginWrite()
+// AddPeer adds peer to chat room with given info
+func (room *ChatRoom) AddPeer(conn net.Conn, addr string, name string) {
+	room.additionQueue <- peerAddition{conn, addr, name}
 }
 
-func (cr *ChatRoom) beginListen() {
-	for c := range cr.NewClients {
-		cr.clients = append(cr.clients, c)
+// RemovePeer removes peer from chat room with given info
+func (room *ChatRoom) RemovePeer(addr string, name string) {
+	room.removalQueue <- peerRemoval{addr, name}
+}
+
+func (room *ChatRoom) start() {
+	go room.listenActions()
+}
+
+func (room *ChatRoom) listenActions() {
+	for {
+		select {
+		case info := <-room.additionQueue:
+			peer := NewPeer(info.conn, info.addr, info.name)
+			room.registerPeer(peer)
+		case info := <-room.removalQueue:
+			room.unregisterPeer(info.addr, info.name)
+		}
 	}
 }
 
-func (cr *ChatRoom) beginWrite() {
-	for msg := range cr.Outgoing {
-		cr.Broadcast(msg)
+func (room *ChatRoom) registerPeer(peer *Peer) {
+	room.peers = append(room.peers, peer)
+	go func() {
+		for msg := range peer.Incoming {
+			room.Incoming <- msg
+		}
+	}()
+}
+
+func (room *ChatRoom) unregisterPeer(addr string, name string) {
+	iToRemove := -1
+	for i, v := range room.peers {
+		if v.Addr == addr && v.Name == name {
+			iToRemove = i
+		}
+	}
+	if i := iToRemove; i != -1 {
+		room.peers = append(room.peers[:i], room.peers[i+1:]...)
 	}
 }
 
-// Broadcast sends message to all clients
-func (cr *ChatRoom) Broadcast(msg string) {
-	for _, client := range cr.clients {
-		client.Outgoing <- msg
-	}
+type peerRemoval struct {
+	addr string
+	name string
+}
+
+type peerAddition struct {
+	conn net.Conn
+	addr string
+	name string
 }
