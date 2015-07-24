@@ -1,6 +1,7 @@
 package comm
 
 import (
+	"fmt"
 	"net"
 	"sync"
 )
@@ -18,24 +19,29 @@ func NewChatRoom() *ChatRoom {
 
 // ChatRoom sends and receives messages to peers
 type ChatRoom struct {
-	Incoming chan string
-	Outgoing chan string
+	incoming chan string
+	outgoing chan string
 	peerLock *sync.Mutex
 	peers    []*Peer
 }
 
 // AddPeer adds peer to chat room with given info
 func (room *ChatRoom) AddPeer(conn net.Conn, addr string, name string) {
+	fmt.Println(conn.RemoteAddr())
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	peer := NewPeer(conn, addr, name)
 	room.peers = append(room.peers, peer)
 	go func() {
-		for msg := range peer.Incoming {
-			room.Incoming <- msg
+		for {
+			msg, err := peer.Receive()
+			if err != nil {
+				room.RemovePeer(peer.Addr, peer.Name)
+				fmt.Println(room.peers)
+				break
+			}
+			room.incoming <- msg
 		}
-		// peer has disconnected at this point
-		room.RemovePeer(peer.Addr, peer.Name)
 	}()
 }
 

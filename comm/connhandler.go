@@ -45,12 +45,10 @@ func (handler *ConnHandler) Dial(addr string) {
 	line, _ := reader.ReadString('\n')
 	line = strings.Trim(line, "\n")
 	addrs := strings.Split(line, ";")
-	for _, a := range addrs {
-		info := strings.Split(a, ",")
-		handler.chatroom.AddPeer(conn, info[0], info[1])
-	}
+	info := strings.Split(addrs[0], ",")
 	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
+	handler.chatroom.AddPeer(conn, info[0], info[1])
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
@@ -59,6 +57,7 @@ func (handler *ConnHandler) Dial(addr string) {
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
+		handler.chatroom.AddPeer(c, info[0], info[1])
 	}
 	fmt.Println(handler.chatroom.peers)
 }

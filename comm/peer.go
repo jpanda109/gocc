@@ -2,6 +2,8 @@ package comm
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"net"
 	"strings"
 )
@@ -26,10 +28,33 @@ func NewPeer(conn net.Conn, addr string, name string) *Peer {
 type Peer struct {
 	Addr     string
 	Name     string
-	Outgoing chan string
-	Incoming chan string
+	outgoing chan string
+	incoming chan string
 	reader   *bufio.Reader
 	writer   *bufio.Writer
+}
+
+// Send sends message to peer, returns error if closed
+func (p *Peer) Send(msg string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case error:
+				err = x
+			}
+		}
+	}()
+	p.outgoing <- msg
+	return nil
+}
+
+// Receive returns message from peer, blocks until available, err if closed
+func (p *Peer) Receive() (string, error) {
+	msg, ok := <-p.incoming
+	if !ok {
+		return "", errors.New("")
+	}
+	return msg, nil
 }
 
 func (p *Peer) String() string {
@@ -42,24 +67,25 @@ func (p *Peer) start() {
 }
 
 func (p *Peer) quit() {
-	close(p.Outgoing)
-	close(p.Incoming)
+	close(p.outgoing)
+	close(p.incoming)
 }
 
 func (p *Peer) beginRead() {
 	for {
 		msg, err := p.reader.ReadString('\n')
 		if err != nil {
+			fmt.Println(err)
 			p.quit()
 			return
 		}
 		msg = strings.Trim(msg, "\n")
-		p.Incoming <- msg
+		p.incoming <- msg
 	}
 }
 
 func (p *Peer) beginWrite() {
-	for msg := range p.Outgoing {
+	for msg := range p.outgoing {
 		if !strings.HasSuffix(msg, "\n") {
 			msg = msg + "\n"
 		}
