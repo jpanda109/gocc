@@ -3,7 +3,6 @@ package comm
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 )
@@ -75,7 +74,6 @@ func (p *Peer) beginRead() {
 	for {
 		msg, err := p.reader.ReadString('\n')
 		if err != nil {
-			fmt.Println(err)
 			p.quit()
 			return
 		}

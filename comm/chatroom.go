@@ -25,11 +25,18 @@ type ChatRoom struct {
 	peers    []*Peer
 }
 
+// Broadcast sends message to all peers
+func (room *ChatRoom) Broadcast(msg string) {
+	for _, peer := range room.peers {
+		peer.Send(msg)
+	}
+}
+
 // AddPeer adds peer to chat room with given info
 func (room *ChatRoom) AddPeer(conn net.Conn, addr string, name string) {
-	fmt.Println(conn.RemoteAddr())
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
+	defer room.Broadcast("A PEER HAS BEEN ADDED")
 	peer := NewPeer(conn, addr, name)
 	room.peers = append(room.peers, peer)
 	go func() {
@@ -40,7 +47,8 @@ func (room *ChatRoom) AddPeer(conn net.Conn, addr string, name string) {
 				fmt.Println(room.peers)
 				break
 			}
-			room.incoming <- msg
+			fmt.Println(msg)
+			// room.incoming <- msg
 		}
 	}()
 }
