@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -14,11 +16,23 @@ func startApp(port string, debug bool, connect string, name string) {
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
 	}
-	handler := comm.NewConnHandler(listenerAddr, name)
+	chatroom := comm.NewChatRoom()
+	handler := comm.NewConnHandler(listenerAddr, name, chatroom)
 	if connect != "" {
 		handler.Dial(connect)
 	}
 	handler.Listen()
+	reader := bufio.NewReader(os.Stdin)
+	go func() {
+		for {
+			msg := chatroom.Receive()
+			fmt.Println(msg)
+		}
+	}()
+	for {
+		msg, _ := reader.ReadString('\n')
+		chatroom.Broadcast(msg)
+	}
 }
 
 func main() {

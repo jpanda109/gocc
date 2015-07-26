@@ -2,17 +2,16 @@ package comm
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"strings"
 )
 
 // NewConnHandler creates a new conn handler
-func NewConnHandler(addr string, name string) *ConnHandler {
+func NewConnHandler(addr string, name string, chatroom *ChatRoom) *ConnHandler {
 	handler := &ConnHandler{
 		addr,
 		name,
-		NewChatRoom(),
+		chatroom,
 	}
 	return handler
 }
@@ -31,7 +30,7 @@ func (handler *ConnHandler) String() string {
 
 // Listen begins listener
 func (handler *ConnHandler) Listen() {
-	handler.listenConns()
+	go handler.listenConns()
 }
 
 // Dial connects to server at address
@@ -48,7 +47,7 @@ func (handler *ConnHandler) Dial(addr string) {
 	info := strings.Split(addrs[0], ",")
 	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
-	handler.chatroom.AddPeer(conn, info[0], info[1])
+	handler.chatroom.AddPeer(NewPeer(conn, info[0], info[1]))
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
@@ -57,9 +56,8 @@ func (handler *ConnHandler) Dial(addr string) {
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
-		handler.chatroom.AddPeer(c, info[0], info[1])
+		handler.chatroom.AddPeer(NewPeer(c, info[0], info[1]))
 	}
-	fmt.Println(handler.chatroom.peers)
 }
 
 func (handler *ConnHandler) listenConns() {
@@ -82,8 +80,7 @@ func (handler *ConnHandler) listenConns() {
 			line, _ := reader.ReadString('\n')
 			line = strings.Trim(line, "\n")
 			info := strings.Split(line, ",")
-			handler.chatroom.AddPeer(conn, info[0], info[1])
+			handler.chatroom.AddPeer(NewPeer(conn, info[0], info[1]))
 		}
-		fmt.Println(handler.chatroom.peers)
 	}
 }

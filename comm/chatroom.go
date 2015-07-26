@@ -1,10 +1,6 @@
 package comm
 
-import (
-	"fmt"
-	"net"
-	"sync"
-)
+import "sync"
 
 // NewChatRoom creates and returns a pointer to chat room
 func NewChatRoom() *ChatRoom {
@@ -32,23 +28,24 @@ func (room *ChatRoom) Broadcast(msg string) {
 	}
 }
 
+// Receive returns the next message from any peer
+func (room *ChatRoom) Receive() string {
+	return <-room.incoming
+}
+
 // AddPeer adds peer to chat room with given info
-func (room *ChatRoom) AddPeer(conn net.Conn, addr string, name string) {
+func (room *ChatRoom) AddPeer(peer *Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
-	defer room.Broadcast("A PEER HAS BEEN ADDED")
-	peer := NewPeer(conn, addr, name)
 	room.peers = append(room.peers, peer)
 	go func() {
 		for {
 			msg, err := peer.Receive()
 			if err != nil {
 				room.RemovePeer(peer.Addr, peer.Name)
-				fmt.Println(room.peers)
 				break
 			}
-			fmt.Println(msg)
-			// room.incoming <- msg
+			room.incoming <- msg
 		}
 	}()
 }
