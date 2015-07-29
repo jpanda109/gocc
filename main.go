@@ -18,7 +18,7 @@ func startApp(port string, debug bool, connect string, name string) {
 
 	termbox.Init()
 	defer termbox.Close()
-	controller := input.NewHandler(listenerAddr, name)
+	controller := input.NewController(listenerAddr, name)
 	if connect != "" {
 		controller.Connect(connect)
 	}
