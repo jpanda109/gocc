@@ -15,27 +15,7 @@ func startApp(port string, debug bool, connect string, name string) {
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
 	}
-	// chatroom := comm.NewChatRoom()
-	// handler := comm.NewConnHandler(listenerAddr, name, chatroom)
-	// if connect != "" {
-	// 	peers := handler.Dial(connect)
-	// 	for _, peer := range peers {
-	// 		chatroom.AddPeer(peer)
-	// 	}
-	// }
-	// handler.Listen()
-	// go func() {
-	// 	for {
-	// 		peer := handler.GetPeer()
-	// 		chatroom.AddPeer(peer)
-	// 	}
-	// }()
-	// controller := input.Handler{
-	// 	handler,
-	// 	chatroom,
-	// 	view.NewChatWindow(),
-	// 	make([]rune, 0),
-	// }
+
 	termbox.Init()
 	defer termbox.Close()
 	controller := input.NewHandler(listenerAddr, name)
@@ -44,18 +24,6 @@ func startApp(port string, debug bool, connect string, name string) {
 	}
 	wg := controller.Start()
 	wg.Wait()
-
-	// reader := bufio.NewReader(os.Stdin)
-	// go func() {
-	// 	for {
-	// 		msg := chatroom.Receive()
-	// 		fmt.Println(msg)
-	// 	}
-	// }()
-	// for {
-	// 	msg, _ := reader.ReadString('\n')
-	// 	chatroom.Broadcast(msg)
-	// }
 }
 
 func main() {

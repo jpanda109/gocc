@@ -33,6 +33,7 @@ type Handler struct {
 func (h *Handler) Start() *sync.WaitGroup {
 	var wg sync.WaitGroup
 	go h.handleConns()
+	go h.handleMessages()
 	wg.Add(1)
 	go h.handleEvents(&wg)
 	return &wg
@@ -46,7 +47,15 @@ func (h *Handler) Connect(addr string) {
 	}
 }
 
+func (h *Handler) handleMessages() {
+	for {
+		msg := h.chatroom.Receive()
+		h.window.MsgQ <- []rune(msg.Body)
+	}
+}
+
 func (h *Handler) handleConns() {
+	h.cHandler.Listen()
 	for {
 		peer := h.cHandler.GetPeer()
 		h.chatroom.AddPeer(peer)
@@ -69,10 +78,17 @@ func (h *Handler) handleEvents(wg *sync.WaitGroup) {
 				return
 			case termbox.KeyEnter:
 				h.chatroom.Broadcast(string(h.editBuffer))
+				h.window.MsgQ <- []rune(h.editBuffer)
 				h.editBuffer = []rune{}
 				h.window.EditBuffer <- h.editBuffer
 			case termbox.KeyBackspace:
-				continue
+				if curlen := len(h.editBuffer); curlen > 0 {
+					h.editBuffer = append([]rune{}, h.editBuffer[:curlen-1]...)
+					h.window.EditBuffer <- h.editBuffer
+				}
+			case termbox.KeySpace:
+				h.editBuffer = append(h.editBuffer, ' ')
+				h.window.EditBuffer <- h.editBuffer
 			}
 		} else {
 			h.editBuffer = append(h.editBuffer, event.Ch)
