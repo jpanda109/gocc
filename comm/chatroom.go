@@ -5,7 +5,7 @@ import "sync"
 // NewChatRoom creates and returns a pointer to chat room
 func NewChatRoom() *ChatRoom {
 	room := &ChatRoom{
-		make(chan string),
+		make(chan *Message),
 		make(chan string),
 		&sync.Mutex{},
 		[]*Peer{},
@@ -15,7 +15,7 @@ func NewChatRoom() *ChatRoom {
 
 // ChatRoom sends and receives messages to peers
 type ChatRoom struct {
-	incoming chan string
+	incoming chan *Message
 	outgoing chan string
 	peerLock *sync.Mutex
 	peers    []*Peer
@@ -29,7 +29,7 @@ func (room *ChatRoom) Broadcast(msg string) {
 }
 
 // Receive returns the next message from any peer
-func (room *ChatRoom) Receive() string {
+func (room *ChatRoom) Receive() *Message {
 	return <-room.incoming
 }
 
@@ -45,7 +45,7 @@ func (room *ChatRoom) AddPeer(peer *Peer) {
 				room.RemovePeer(peer.Addr, peer.Name)
 				break
 			}
-			room.incoming <- msg
+			room.incoming <- &Message{peer, msg}
 		}
 	}()
 }
