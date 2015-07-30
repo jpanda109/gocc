@@ -23,7 +23,8 @@ func startApp(port string, debug bool, connect string, name string) {
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
 	}
-
+	termbox.Init()
+	defer termbox.Close()
 	controller := input.NewController(listenerAddr, name)
 	if connect != "" {
 		err := controller.Connect(connect)
@@ -32,8 +33,7 @@ func startApp(port string, debug bool, connect string, name string) {
 			return
 		}
 	}
-	termbox.Init()
-	defer termbox.Close()
+	log.Println("started from the bottom")
 	wg := controller.Start()
 	wg.Wait()
 }

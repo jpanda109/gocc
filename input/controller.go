@@ -36,6 +36,7 @@ type Controller struct {
 
 // Start begins handler listening for input
 func (c *Controller) Start() *sync.WaitGroup {
+	log.Println("Controller.Start() called")
 	var wg sync.WaitGroup
 	go c.handleConns()
 	go c.handleMessages()

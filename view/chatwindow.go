@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/jpanda109/gocc/comm"
 	"github.com/nsf/termbox-go"
@@ -51,11 +52,14 @@ func (window *ChatWindow) Stop() {
 }
 
 func (window *ChatWindow) listenEdits() {
+	log.Println("Listening to edits")
 	for b := range window.EditBuffer {
 		for x := 0; x < window.w; x++ {
 			termbox.SetCell(x, window.h-1, ' ', termbox.ColorBlack, termbox.ColorBlack)
 		}
 		for x, ch := range b {
+			log.Println(x)
+			log.Println(window.h - 1)
 			termbox.SetCell(x, window.h-1, ch, termbox.ColorWhite, termbox.ColorBlack)
 		}
 		termbox.Flush()
