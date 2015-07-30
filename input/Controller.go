@@ -1,6 +1,7 @@
 package input
 
 import (
+	"log"
 	"sync"
 
 	"github.com/jpanda109/gocc/comm"
@@ -44,15 +45,15 @@ func (c *Controller) Start() *sync.WaitGroup {
 }
 
 // Connect connects to chat room and adds all existing peers
-func (c *Controller) Connect(addr string) {
+func (c *Controller) Connect(addr string) error {
 	peers, err := c.cHandler.Dial(addr)
 	if err != nil {
-		c.window.Stop()
-		c.quit <- true
+		return err
 	}
 	for _, peer := range peers {
 		c.chatroom.AddPeer(peer)
 	}
+	return nil
 }
 
 func (c *Controller) handleMessages() {
@@ -79,7 +80,9 @@ func (c *Controller) listenEvents(wg *sync.WaitGroup) {
 		}
 	}()
 	go c.handleEvents(eventQueue)
+	log.Println("controller waiting on quit")
 	<-c.quit
+	log.Println("controller no longer listening")
 }
 
 func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
