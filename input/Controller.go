@@ -12,10 +12,12 @@ import (
 func NewController(addr, name string) *Controller {
 	chatroom := comm.NewChatRoom()
 	controller := &Controller{
+		comm.NewPeer(nil, addr, name),
 		comm.NewConnHandler(addr, name, chatroom),
 		chatroom,
 		view.NewChatWindow(),
 		make([]rune, 0),
+		make(chan bool),
 	}
 	return controller
 }
@@ -23,10 +25,12 @@ func NewController(addr, name string) *Controller {
 // Controller handles input and controls commucation between peers
 // and views
 type Controller struct {
+	self       *comm.Peer
 	cHandler   *comm.ConnHandler
 	chatroom   *comm.ChatRoom
 	window     *view.ChatWindow
 	editBuffer []rune
+	quit       chan bool
 }
 
 // Start begins handler listening for input
@@ -35,13 +39,17 @@ func (c *Controller) Start() *sync.WaitGroup {
 	go c.handleConns()
 	go c.handleMessages()
 	wg.Add(1)
-	go c.handleEvents(&wg)
+	go c.listenEvents(&wg)
 	return &wg
 }
 
 // Connect connects to chat room and adds all existing peers
 func (c *Controller) Connect(addr string) {
-	peers := c.cHandler.Dial(addr)
+	peers, err := c.cHandler.Dial(addr)
+	if err != nil {
+		c.window.Stop()
+		c.quit <- true
+	}
 	for _, peer := range peers {
 		c.chatroom.AddPeer(peer)
 	}
@@ -50,7 +58,7 @@ func (c *Controller) Connect(addr string) {
 func (c *Controller) handleMessages() {
 	for {
 		msg := c.chatroom.Receive()
-		c.window.MsgQ <- []rune(msg.Body)
+		c.window.MsgQ <- msg
 	}
 }
 
@@ -62,7 +70,7 @@ func (c *Controller) handleConns() {
 	}
 }
 
-func (c *Controller) handleEvents(wg *sync.WaitGroup) {
+func (c *Controller) listenEvents(wg *sync.WaitGroup) {
 	defer wg.Done()
 	eventQueue := make(chan termbox.Event)
 	go func() {
@@ -70,15 +78,23 @@ func (c *Controller) handleEvents(wg *sync.WaitGroup) {
 			eventQueue <- termbox.PollEvent()
 		}
 	}()
+	go c.handleEvents(eventQueue)
+	<-c.quit
+}
+
+func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 	for event := range eventQueue {
 		if event.Key != 0 {
 			switch event.Key {
 			case termbox.KeyCtrlC:
 				c.window.Stop()
-				return
+				c.quit <- true
 			case termbox.KeyEnter:
 				c.chatroom.Broadcast(string(c.editBuffer))
-				c.window.MsgQ <- []rune(c.editBuffer)
+				c.window.MsgQ <- &comm.Message{
+					Sender: c.self,
+					Body:   string(c.editBuffer),
+				}
 				c.editBuffer = []rune{}
 				c.window.EditBuffer <- c.editBuffer
 			case termbox.KeyBackspace:

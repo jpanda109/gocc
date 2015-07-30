@@ -7,11 +7,19 @@ import (
 	"strings"
 )
 
+var curID int
+
+func idIncrementer() int {
+	curID++
+	return curID
+}
+
 // NewPeer returns a new peer
 func NewPeer(conn net.Conn, addr string, name string) *Peer {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	newPeer := &Peer{
+		idIncrementer(),
 		addr,
 		name,
 		make(chan string),
@@ -19,12 +27,12 @@ func NewPeer(conn net.Conn, addr string, name string) *Peer {
 		reader,
 		writer,
 	}
-	newPeer.start()
 	return newPeer
 }
 
 // Peer represents a peer server
 type Peer struct {
+	ID       int
 	Addr     string
 	Name     string
 	outgoing chan string
@@ -60,7 +68,8 @@ func (p *Peer) String() string {
 	return p.Addr + "," + p.Name
 }
 
-func (p *Peer) start() {
+// Start begins listening functions
+func (p *Peer) Start() {
 	go p.beginRead()
 	go p.beginWrite()
 }

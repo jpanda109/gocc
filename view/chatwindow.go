@@ -1,18 +1,28 @@
 package view
 
 import (
+	"fmt"
+
+	"github.com/jpanda109/gocc/comm"
 	"github.com/nsf/termbox-go"
 )
 
 // NewChatWindow creates a new chat window
 func NewChatWindow() *ChatWindow {
 	w, h := termbox.Size()
+	var msgs []*comm.Message
+	for i := 0; i < h-2; i++ {
+		msgs = append(msgs, &comm.Message{
+			Sender: nil,
+			Body:   "",
+		})
+	}
 	window := &ChatWindow{
 		w,
 		h,
 		make(chan []rune),
-		make(chan []rune),
-		make([][]rune, h-2),
+		make(chan *comm.Message),
+		msgs,
 	}
 	window.start()
 	return window
@@ -23,8 +33,8 @@ type ChatWindow struct {
 	w          int
 	h          int
 	EditBuffer chan []rune
-	MsgQ       chan []rune
-	msgs       [][]rune
+	MsgQ       chan *comm.Message
+	msgs       []*comm.Message
 }
 
 func (window *ChatWindow) start() {
@@ -54,14 +64,27 @@ func (window *ChatWindow) listenEdits() {
 
 func (window *ChatWindow) listenMsgs() {
 	for m := range window.MsgQ {
-		window.msgs = append([][]rune{m}, window.msgs[:window.h-3]...)
+		window.msgs = append([]*comm.Message{m}, window.msgs[:window.h-3]...)
 		y := window.h - 3
-		for _, line := range window.msgs {
+		for _, msg := range window.msgs {
+			if msg.Sender == nil {
+				continue
+			}
 			for x := 0; x < window.w; x++ {
 				termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
 			}
-			for x := 0; x < len(line); x++ {
-				termbox.SetCell(x, y, rune(line[x]), termbox.ColorWhite, termbox.ColorBlack)
+			x := 0
+			for ; x < len(msg.Sender.Name); x++ {
+				termbox.SetCell(x, y, rune(msg.Sender.Name[x]), termbox.ColorCyan, termbox.ColorBlack)
+			}
+			idPart := fmt.Sprintf(" (%v): ", msg.Sender.ID)
+			for i := 0; i < len(idPart); i++ {
+				termbox.SetCell(x, y, rune(idPart[i]), termbox.ColorBlue, termbox.ColorBlack)
+				x++
+			}
+			for i := 0; i < len(msg.Body); i++ {
+				termbox.SetCell(x, y, rune(msg.Body[i]), termbox.ColorWhite, termbox.ColorBlack)
+				x++
 			}
 			y--
 		}

@@ -2,6 +2,7 @@ package comm
 
 import (
 	"bufio"
+	"log"
 	"net"
 	"strings"
 )
@@ -41,11 +42,12 @@ func (handler *ConnHandler) Listen() {
 }
 
 // Dial connects to server at address
-func (handler *ConnHandler) Dial(addr string) []*Peer {
+func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
 	var peers []*Peer
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return nil, err
 	}
 	writer := bufio.NewWriter(conn)
 	reader := bufio.NewReader(conn)
@@ -66,7 +68,7 @@ func (handler *ConnHandler) Dial(addr string) []*Peer {
 		line, _ = reader.ReadString('\n')
 		peers = append(peers, NewPeer(c, info[0], info[1]))
 	}
-	return peers
+	return peers, nil
 }
 
 func (handler *ConnHandler) listenConns() {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -10,7 +11,13 @@ import (
 
 const msglen = 256
 
+func setLogger() {
+	fo, _ := os.Create("log.txt")
+	log.SetOutput(fo)
+}
+
 func startApp(port string, debug bool, connect string, name string) {
+	setLogger()
 	listenerAddr := ":" + port
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
@@ -34,7 +41,7 @@ func main() {
 			Value: "8080",
 			Usage: "Port listen to",
 		},
-		cli.BoolTFlag{
+		cli.BoolFlag{
 			Name:  "debug, d",
 			Usage: "Sets server to localhost only",
 		},
