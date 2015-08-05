@@ -10,22 +10,19 @@ import (
 
 // NewChatWindow creates a new chat window
 func NewChatWindow() *ChatWindow {
-	w, h := termbox.Size()
-	var msgs []*comm.Message
-	for i := 0; i < h-2; i++ {
-		msgs = append(msgs, &comm.Message{
-			Sender: nil,
-			Body:   "",
-		})
+	// Change such that start is public, move width and height, etc into
+	// the start function, add listener for window resizing
+	err := termbox.Init()
+	if err == nil {
+		defer termbox.Close()
 	}
 	window := &ChatWindow{
-		w,
-		h,
+		0,
+		0,
 		make(chan []rune),
 		make(chan *comm.Message),
-		msgs,
+		make([]*comm.Message, 0),
 	}
-	window.start()
 	return window
 }
 
@@ -38,7 +35,18 @@ type ChatWindow struct {
 	msgs       []*comm.Message
 }
 
-func (window *ChatWindow) start() {
+// Start begins listeners
+func (window *ChatWindow) Start() {
+	w, h := termbox.Size()
+	window.w, window.h = w, h
+	var msgs []*comm.Message
+	for i := 0; i < h-2; i++ {
+		msgs = append(msgs, &comm.Message{
+			Sender: nil,
+			Body:   "",
+		})
+	}
+	window.msgs = msgs
 	go window.listenEdits()
 	go window.listenMsgs()
 }

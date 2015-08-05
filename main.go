@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -23,17 +22,17 @@ func startApp(port string, debug bool, connect string, name string) {
 	if debug {
 		listenerAddr = "localhost" + listenerAddr
 	}
-	termbox.Init()
-	defer termbox.Close()
 	controller := input.NewController(listenerAddr, name)
 	if connect != "" {
 		err := controller.Connect(connect)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 	}
 	log.Println("started from the bottom")
+	termbox.Init()
+	defer termbox.Close()
 	wg := controller.Start()
 	wg.Wait()
 }
