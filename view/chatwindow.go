@@ -12,10 +12,6 @@ import (
 func NewChatWindow() *ChatWindow {
 	// Change such that start is public, move width and height, etc into
 	// the start function, add listener for window resizing
-	err := termbox.Init()
-	if err == nil {
-		defer termbox.Close()
-	}
 	window := &ChatWindow{
 		0,
 		0,
@@ -91,7 +87,7 @@ func (window *ChatWindow) listenMsgs() {
 			}
 			idPart := fmt.Sprintf(" (%v): ", msg.Sender.ID)
 			for i := 0; i < len(idPart); i++ {
-				termbox.SetCell(x, y, rune(idPart[i]), termbox.ColorBlue, termbox.ColorBlack)
+				termbox.SetCell(x, y, rune(idPart[i]), termbox.ColorRed, termbox.ColorBlack)
 				x++
 			}
 			for i := 0; i < len(msg.Body); i++ {
