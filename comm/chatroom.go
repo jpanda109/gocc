@@ -14,6 +14,10 @@ func NewChatRoom() *ChatRoom {
 }
 
 // ChatRoom sends and receives messages to peers
+// incoming is a channel of messages from each peer
+// outgoing is a channel of messages to be broadcasted to other peers
+// peerLock handles atomicity of adding and removing peers
+// peers is a list of peers in the chat room
 type ChatRoom struct {
 	incoming chan *Message
 	outgoing chan string
@@ -24,7 +28,7 @@ type ChatRoom struct {
 // Broadcast sends message to all peers
 func (room *ChatRoom) Broadcast(msg string) {
 	for _, peer := range room.peers {
-		peer.Send(msg)
+		peer.Send(&MsgGob{Public, msg})
 	}
 }
 

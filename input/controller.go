@@ -1,5 +1,8 @@
 package input
 
+// This file defines the Controller, which handles user input and
+// actions received from peers
+
 import (
 	"log"
 	"sync"
@@ -9,7 +12,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-// NewController returns reference to Handler object
+// NewController returns reference to Controller object
 func NewController(addr, name string) *Controller {
 	chatroom := comm.NewChatRoom()
 	controller := &Controller{
@@ -25,6 +28,9 @@ func NewController(addr, name string) *Controller {
 
 // Controller handles input and controls commucation between peers
 // and views
+// self is a reference to a peer representing the user
+// editBuffer is the current buffer that the user sends upon choosing so
+// quit is a channel signalling when the user decides to stop the application
 type Controller struct {
 	self       *comm.Peer
 	cHandler   *comm.ConnHandler
@@ -35,6 +41,8 @@ type Controller struct {
 }
 
 // Start begins handler listening for input
+// returns a WaitGroup which tells anyone using the controller when the user
+// 	decides to stop running the application
 func (c *Controller) Start() *sync.WaitGroup {
 	log.Println("Controller.Start() called")
 	c.window.Start()
@@ -47,6 +55,7 @@ func (c *Controller) Start() *sync.WaitGroup {
 }
 
 // Connect connects to chat room and adds all existing peers
+// returns an error if there's an issue connecting to the peer
 func (c *Controller) Connect(addr string) error {
 	peers, err := c.cHandler.Dial(addr)
 	if err != nil {
@@ -58,6 +67,7 @@ func (c *Controller) Connect(addr string) error {
 	return nil
 }
 
+// handleMessages dictates how other peers' messages are treated
 func (c *Controller) handleMessages() {
 	for {
 		msg := c.chatroom.Receive()
@@ -65,6 +75,7 @@ func (c *Controller) handleMessages() {
 	}
 }
 
+// handleConns dictates how new connections are treated
 func (c *Controller) handleConns() {
 	c.cHandler.Listen()
 	for {
@@ -73,6 +84,7 @@ func (c *Controller) handleConns() {
 	}
 }
 
+// listenEvents gathers input from termbox.PollEvent()
 func (c *Controller) listenEvents(wg *sync.WaitGroup) {
 	defer wg.Done()
 	eventQueue := make(chan termbox.Event)
@@ -87,6 +99,7 @@ func (c *Controller) listenEvents(wg *sync.WaitGroup) {
 	log.Println("controller no longer listening")
 }
 
+// handleEvents dictates how user input is treated and what actions to take
 func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 	for event := range eventQueue {
 		if event.Key != 0 {
@@ -98,7 +111,10 @@ func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 				c.chatroom.Broadcast(string(c.editBuffer))
 				c.window.MsgQ <- &comm.Message{
 					Sender: c.self,
-					Body:   string(c.editBuffer),
+					Info: &comm.MsgGob{
+						Action: comm.Public,
+						Body:   string(c.editBuffer),
+					},
 				}
 				c.editBuffer = []rune{}
 				c.window.EditBuffer <- c.editBuffer

@@ -1,14 +1,14 @@
 package comm
 
 import (
-	"bufio"
+	"encoding/gob"
 	"errors"
 	"net"
-	"strings"
 )
 
 var curID int
 
+// idIncrementer uses closure to return a unique ID every time
 func idIncrementer() int {
 	curID++
 	return curID
@@ -16,33 +16,39 @@ func idIncrementer() int {
 
 // NewPeer returns a new peer
 func NewPeer(conn net.Conn, addr string, name string) *Peer {
-	reader := bufio.NewReader(conn)
-	writer := bufio.NewWriter(conn)
+	decoder := gob.NewDecoder(conn)
+	encoder := gob.NewEncoder(conn)
 	newPeer := &Peer{
 		idIncrementer(),
 		addr,
 		name,
-		make(chan string),
-		make(chan string),
-		reader,
-		writer,
+		make(chan *MsgGob),
+		make(chan *MsgGob),
+		decoder,
+		encoder,
 	}
 	return newPeer
 }
 
 // Peer represents a peer server
+// ID is a unique id for each peer
+// Addr is the remote address of the peer
+// outgoing is a channel of gobs used to send data to the peer
+// incoming is a channel of gobs user to receive data from the peer
+// decoder sends a gob over TCP to the peer
+// encoder receives a gob over TCP from the peer
 type Peer struct {
 	ID       int
 	Addr     string
 	Name     string
-	outgoing chan string
-	incoming chan string
-	reader   *bufio.Reader
-	writer   *bufio.Writer
+	outgoing chan *MsgGob
+	incoming chan *MsgGob
+	decoder  *gob.Decoder
+	encoder  *gob.Encoder
 }
 
 // Send sends message to peer, returns error if closed
-func (p *Peer) Send(msg string) (err error) {
+func (p *Peer) Send(msg *MsgGob) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch x := r.(type) {
@@ -56,10 +62,10 @@ func (p *Peer) Send(msg string) (err error) {
 }
 
 // Receive returns message from peer, blocks until available, err if closed
-func (p *Peer) Receive() (string, error) {
+func (p *Peer) Receive() (*MsgGob, error) {
 	msg, ok := <-p.incoming
 	if !ok {
-		return "", errors.New("")
+		return nil, errors.New("")
 	}
 	return msg, nil
 }
@@ -81,22 +87,18 @@ func (p *Peer) quit() {
 
 func (p *Peer) beginRead() {
 	for {
-		msg, err := p.reader.ReadString('\n')
+		msg := &MsgGob{}
+		err := p.decoder.Decode(msg)
 		if err != nil {
 			p.quit()
 			return
 		}
-		msg = strings.Trim(msg, "\n")
 		p.incoming <- msg
 	}
 }
 
 func (p *Peer) beginWrite() {
 	for msg := range p.outgoing {
-		if !strings.HasSuffix(msg, "\n") {
-			msg = msg + "\n"
-		}
-		p.writer.WriteString(msg)
-		p.writer.Flush()
+		p.encoder.Encode(msg)
 	}
 }

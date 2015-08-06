@@ -17,9 +17,9 @@ func setLogger() {
 }
 
 func startApp(port string, debug bool, connect string, name string) {
-	setLogger()
 	listenerAddr := ":" + port
 	if debug {
+		setLogger()
 		listenerAddr = "localhost" + listenerAddr
 	}
 	controller := input.NewController(listenerAddr, name)

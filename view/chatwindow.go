@@ -1,5 +1,8 @@
 package view
 
+// This file implements the ChatWindow, which simply displays messages
+// along with the user's edit bar onto the terminal
+
 import (
 	"fmt"
 	"log"
@@ -23,6 +26,11 @@ func NewChatWindow() *ChatWindow {
 }
 
 // ChatWindow displays current editing buffer and messages
+// w is the current width of the terminal
+// h is the current height of the terminal
+// EditBuffer receives the current editing buffer from a controller
+// MsgQ receives messages to display
+// msgs is a list of messages needing to be displayed on the terminal
 type ChatWindow struct {
 	w          int
 	h          int
@@ -39,7 +47,7 @@ func (window *ChatWindow) Start() {
 	for i := 0; i < h-2; i++ {
 		msgs = append(msgs, &comm.Message{
 			Sender: nil,
-			Body:   "",
+			Info:   &comm.MsgGob{},
 		})
 	}
 	window.msgs = msgs
@@ -55,6 +63,8 @@ func (window *ChatWindow) Stop() {
 	termbox.Flush()
 }
 
+// listenEdits begins listening on the EditBuffer channel, displays onto screen
+// accordingly
 func (window *ChatWindow) listenEdits() {
 	log.Println("Listening to edits")
 	for b := range window.EditBuffer {
@@ -70,6 +80,8 @@ func (window *ChatWindow) listenEdits() {
 	}
 }
 
+// listenMsgs begins listening on the MsgQ channel and appends then to the
+// msgs buffer accordingly, and then displays the messages onto the terminal
 func (window *ChatWindow) listenMsgs() {
 	for m := range window.MsgQ {
 		window.msgs = append([]*comm.Message{m}, window.msgs[:window.h-3]...)
@@ -90,8 +102,9 @@ func (window *ChatWindow) listenMsgs() {
 				termbox.SetCell(x, y, rune(idPart[i]), termbox.ColorRed, termbox.ColorBlack)
 				x++
 			}
-			for i := 0; i < len(msg.Body); i++ {
-				termbox.SetCell(x, y, rune(msg.Body[i]), termbox.ColorWhite, termbox.ColorBlack)
+			body := msg.Info.Body
+			for i := 0; i < len(body); i++ {
+				termbox.SetCell(x, y, rune(body[i]), termbox.ColorWhite, termbox.ColorBlack)
 				x++
 			}
 			y--
