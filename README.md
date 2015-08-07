@@ -7,11 +7,11 @@ without killing the chat room.
 
 ## Installation
 
-> go install github.com/jpanda109/gocc
+> go get github.com/jpanda109/gocc
 
 ## Usage
 
-run for various flags
+(assuming go's bin is in your path) run for various flags
 ```
 gocc -h
 ```

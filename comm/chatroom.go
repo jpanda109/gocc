@@ -39,7 +39,6 @@ func (room *ChatRoom) AddPeer(peer *Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	room.peers = append(room.peers, peer)
-	peer.Start()
 	go func() {
 		for {
 			msg, err := peer.Receive()
