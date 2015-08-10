@@ -44,17 +44,9 @@ type Peer struct {
 }
 
 // Send sends message to peer, returns error if closed
-func (p *Peer) Send(msg *MsgGob) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case error:
-				err = x
-			}
-		}
-	}()
-	p.encoder.Encode(msg)
-	return nil
+func (p *Peer) Send(msg *MsgGob) error {
+	err := p.encoder.Encode(msg)
+	return err
 }
 
 // Receive returns message from peer, blocks until available, err if closed
