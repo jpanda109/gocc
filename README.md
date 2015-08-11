@@ -5,6 +5,12 @@ communication between clients without having to go through a central server
 of any kind. Additionally, people can disconnect and connect to any peers
 without killing the chat room.
 
+### Why Use Gocc?
+
+Gocc is for users who care about secure and untracked communication. Data
+is never sent to remote servers, so as long as you trust everyone in the chat
+room to not save data, then no data is tracked.
+
 ## Installation
 
 > go get github.com/jpanda109/gocc
