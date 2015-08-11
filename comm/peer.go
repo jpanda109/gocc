@@ -31,8 +31,6 @@ func NewPeer(conn net.Conn, addr string, name string) *Peer {
 // Peer represents a peer server
 // ID is a unique id for each peer
 // Addr is the remote address of the peer
-// outgoing is a channel of gobs used to send data to the peer
-// incoming is a channel of gobs user to receive data from the peer
 // decoder sends a gob over TCP to the peer
 // encoder receives a gob over TCP from the peer
 type Peer struct {

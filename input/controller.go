@@ -108,6 +108,9 @@ func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 				c.window.Stop()
 				c.quit <- true
 			case termbox.KeyEnter:
+				if len(c.editBuffer) == 0 {
+					continue
+				}
 				c.chatroom.Broadcast(string(c.editBuffer))
 				c.window.MsgQ <- &comm.Message{
 					Sender: c.self,
