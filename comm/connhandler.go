@@ -57,7 +57,7 @@ func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
 	info := strings.Split(addrs[0], ",")
 	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
-	peers = append(peers, NewPeer(conn, info[0], info[1]))
+	peers = append(peers, NewPeer(conn, conn, info[0], info[1]))
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
@@ -66,7 +66,7 @@ func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
-		peers = append(peers, NewPeer(c, info[0], info[1]))
+		peers = append(peers, NewPeer(c, c, info[0], info[1]))
 	}
 	return peers, nil
 }
@@ -91,7 +91,7 @@ func (handler *ConnHandler) listenConns() {
 			line, _ := reader.ReadString('\n')
 			line = strings.Trim(line, "\n")
 			info := strings.Split(line, ",")
-			handler.newPeers <- NewPeer(conn, info[0], info[1])
+			handler.newPeers <- NewPeer(conn, conn, info[0], info[1])
 		}
 	}
 }

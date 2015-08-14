@@ -16,7 +16,7 @@ import (
 func NewController(addr, name string) *Controller {
 	chatroom := comm.NewChatRoom()
 	controller := &Controller{
-		comm.NewPeer(nil, addr, name),
+		comm.NewPeer(nil, nil, addr, name),
 		comm.NewConnHandler(addr, name, chatroom),
 		chatroom,
 		view.NewChatWindow(),

@@ -3,7 +3,7 @@ package comm
 import (
 	"encoding/gob"
 	"errors"
-	"net"
+	"io"
 )
 
 var curID int
@@ -15,9 +15,9 @@ func idIncrementer() int {
 }
 
 // NewPeer returns a new peer
-func NewPeer(conn net.Conn, addr string, name string) *Peer {
-	decoder := gob.NewDecoder(conn)
-	encoder := gob.NewEncoder(conn)
+func NewPeer(r io.Reader, w io.Writer, addr string, name string) *Peer {
+	decoder := gob.NewDecoder(r)
+	encoder := gob.NewEncoder(w)
 	newPeer := &Peer{
 		idIncrementer(),
 		addr,

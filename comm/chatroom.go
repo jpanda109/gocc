@@ -6,6 +6,7 @@ import "sync"
 func NewChatRoom() *ChatRoom {
 	room := &ChatRoom{
 		make(chan *Message),
+		make(chan string),
 		&sync.Mutex{},
 		[]*Peer{},
 	}
@@ -17,16 +18,15 @@ func NewChatRoom() *ChatRoom {
 // peerLock handles atomicity of adding and removing peers
 // peers is a list of peers in the chat room
 type ChatRoom struct {
-	incoming chan *Message
-	peerLock *sync.Mutex
-	peers    []*Peer
+	incoming   chan *Message
+	broadcasts chan string
+	peerLock   *sync.Mutex
+	peers      []*Peer
 }
 
 // Broadcast sends message to all peers
 func (room *ChatRoom) Broadcast(msg string) {
-	for _, peer := range room.peers {
-		peer.Send(&MsgGob{Public, msg})
-	}
+	room.broadcasts <- msg
 }
 
 // Receive returns the next message from any peer
@@ -47,6 +47,14 @@ func (room *ChatRoom) AddPeer(peer *Peer) {
 				break
 			}
 			room.incoming <- &Message{peer, msg}
+		}
+	}()
+	go func() {
+		for {
+			msg := <-room.broadcasts
+			for _, peer := range room.peers {
+				peer.Send(&MsgGob{Public, msg})
+			}
 		}
 	}()
 }
