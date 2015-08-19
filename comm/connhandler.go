@@ -12,7 +12,7 @@ func NewConnHandler(addr string, name string, chatroom *ChatRoom) *ConnHandler {
 	handler := &ConnHandler{
 		addr,
 		name,
-		make(chan *Peer),
+		make(chan Peer),
 		chatroom,
 	}
 	return handler
@@ -22,7 +22,7 @@ func NewConnHandler(addr string, name string, chatroom *ChatRoom) *ConnHandler {
 type ConnHandler struct {
 	addr     string
 	name     string
-	newPeers chan *Peer
+	newPeers chan Peer
 	chatroom *ChatRoom
 }
 
@@ -32,7 +32,7 @@ func (handler *ConnHandler) String() string {
 }
 
 // GetPeer returns the next peer that connects
-func (handler *ConnHandler) GetPeer() *Peer {
+func (handler *ConnHandler) GetPeer() Peer {
 	return <-handler.newPeers
 }
 
@@ -42,8 +42,8 @@ func (handler *ConnHandler) Listen() {
 }
 
 // Dial connects to server at address
-func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
-	var peers []*Peer
+func (handler *ConnHandler) Dial(addr string) ([]Peer, error) {
+	var peers []Peer
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Println(err)
@@ -57,7 +57,7 @@ func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
 	info := strings.Split(addrs[0], ",")
 	writer.WriteString(handler.String() + "\n")
 	writer.Flush()
-	peers = append(peers, NewPeer(conn, conn, info[0], info[1]))
+	peers = append(peers, newPeer(conn, conn, info[0], info[1]))
 	for _, a := range addrs[1:] {
 		info := strings.Split(a, ",")
 		c, _ := net.Dial("tcp", info[0])
@@ -66,7 +66,7 @@ func (handler *ConnHandler) Dial(addr string) ([]*Peer, error) {
 		writer.Flush()
 		reader = bufio.NewReader(c)
 		line, _ = reader.ReadString('\n')
-		peers = append(peers, NewPeer(c, c, info[0], info[1]))
+		peers = append(peers, newPeer(c, c, info[0], info[1]))
 	}
 	return peers, nil
 }
@@ -91,7 +91,7 @@ func (handler *ConnHandler) listenConns() {
 			line, _ := reader.ReadString('\n')
 			line = strings.Trim(line, "\n")
 			info := strings.Split(line, ",")
-			handler.newPeers <- NewPeer(conn, conn, info[0], info[1])
+			handler.newPeers <- newPeer(conn, conn, info[0], info[1])
 		}
 	}
 }

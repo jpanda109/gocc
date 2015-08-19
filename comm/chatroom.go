@@ -8,7 +8,7 @@ func NewChatRoom() *ChatRoom {
 		make(chan *Message),
 		make(chan string),
 		&sync.Mutex{},
-		[]*Peer{},
+		[]Peer{},
 	}
 	return room
 }
@@ -21,7 +21,7 @@ type ChatRoom struct {
 	incoming   chan *Message
 	broadcasts chan string
 	peerLock   *sync.Mutex
-	peers      []*Peer
+	peers      []Peer
 }
 
 // Broadcast sends message to all peers
@@ -35,7 +35,7 @@ func (room *ChatRoom) Receive() *Message {
 }
 
 // AddPeer adds peer to chat room with given info
-func (room *ChatRoom) AddPeer(peer *Peer) {
+func (room *ChatRoom) AddPeer(peer Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	room.peers = append(room.peers, peer)
@@ -43,10 +43,10 @@ func (room *ChatRoom) AddPeer(peer *Peer) {
 		for {
 			msg, err := peer.Receive()
 			if err != nil {
-				room.RemovePeer(peer.Addr, peer.Name)
+				room.RemovePeer(peer)
 				break
 			}
-			room.incoming <- &Message{peer, msg}
+			room.incoming <- &Message{peer.ID(), peer.Name(), msg}
 		}
 	}()
 	go func() {
@@ -60,12 +60,12 @@ func (room *ChatRoom) AddPeer(peer *Peer) {
 }
 
 // RemovePeer removes peer from chat room with given info
-func (room *ChatRoom) RemovePeer(addr string, name string) {
+func (room *ChatRoom) RemovePeer(peer Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	iToRemove := -1
 	for i, v := range room.peers {
-		if v.Addr == addr && v.Name == name {
+		if v == peer {
 			iToRemove = i
 		}
 	}

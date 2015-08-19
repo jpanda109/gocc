@@ -46,8 +46,9 @@ func (window *ChatWindow) Start() {
 	var msgs []*comm.Message
 	for i := 0; i < h-2; i++ {
 		msgs = append(msgs, &comm.Message{
-			Sender: nil,
-			Info:   &comm.MsgGob{},
+			SenderID:   -1,
+			SenderName: "",
+			Info:       &comm.MsgGob{},
 		})
 	}
 	window.msgs = msgs
@@ -87,17 +88,17 @@ func (window *ChatWindow) listenMsgs() {
 		window.msgs = append([]*comm.Message{m}, window.msgs[:window.h-3]...)
 		y := window.h - 3
 		for _, msg := range window.msgs {
-			if msg.Sender == nil {
+			if msg.SenderID == -1 {
 				continue
 			}
 			for x := 0; x < window.w; x++ {
 				termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
 			}
 			x := 0
-			for ; x < len(msg.Sender.Name); x++ {
-				termbox.SetCell(x, y, rune(msg.Sender.Name[x]), termbox.ColorCyan, termbox.ColorBlack)
+			for ; x < len(msg.SenderName); x++ {
+				termbox.SetCell(x, y, rune(msg.SenderName[x]), termbox.ColorCyan, termbox.ColorBlack)
 			}
-			idPart := fmt.Sprintf(" (%v): ", msg.Sender.ID)
+			idPart := fmt.Sprintf(" (%v): ", msg.SenderID)
 			for i := 0; i < len(idPart); i++ {
 				termbox.SetCell(x, y, rune(idPart[i]), termbox.ColorRed, termbox.ColorBlack)
 				x++

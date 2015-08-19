@@ -12,11 +12,36 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+type ownPeer struct {
+	addr string
+	name string
+}
+
+func (p *ownPeer) ID() int {
+	return 0
+}
+
+func (p *ownPeer) Name() string {
+	return p.name
+}
+
+func (p *ownPeer) Send(msg *comm.MsgGob) error {
+	return nil
+}
+
+func (p *ownPeer) Receive() (*comm.MsgGob, error) {
+	return nil, nil
+}
+
+func (p *ownPeer) String() string {
+	return p.addr + "," + p.name
+}
+
 // NewController returns reference to Controller object
 func NewController(addr, name string) *Controller {
 	chatroom := comm.NewChatRoom()
 	controller := &Controller{
-		comm.NewPeer(nil, nil, addr, name),
+		&ownPeer{addr, name},
 		comm.NewConnHandler(addr, name, chatroom),
 		chatroom,
 		view.NewChatWindow(),
@@ -32,7 +57,7 @@ func NewController(addr, name string) *Controller {
 // editBuffer is the current buffer that the user sends upon choosing so
 // quit is a channel signalling when the user decides to stop the application
 type Controller struct {
-	self       *comm.Peer
+	self       comm.Peer
 	cHandler   *comm.ConnHandler
 	chatroom   *comm.ChatRoom
 	window     *view.ChatWindow
@@ -113,7 +138,8 @@ func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 				}
 				c.chatroom.Broadcast(string(c.editBuffer))
 				c.window.MsgQ <- &comm.Message{
-					Sender: c.self,
+					SenderID:   c.self.ID(),
+					SenderName: c.self.Name(),
 					Info: &comm.MsgGob{
 						Action: comm.Public,
 						Body:   string(c.editBuffer),
