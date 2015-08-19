@@ -2,9 +2,19 @@ package comm
 
 import "sync"
 
+// ChatRoom defines an interface which can receive and broadcast messages to
+// a number of peers
+type ChatRoom interface {
+	Broadcast(msg string)
+	Receive() *Message
+	AddPeer(peer Peer)
+	RemovePeer(peer Peer)
+	Peers() []Peer
+}
+
 // NewChatRoom creates and returns a pointer to chat room
-func NewChatRoom() *ChatRoom {
-	room := &ChatRoom{
+func NewChatRoom() ChatRoom {
+	room := &chatRoom{
 		make(chan *Message),
 		make(chan string),
 		&sync.Mutex{},
@@ -17,7 +27,7 @@ func NewChatRoom() *ChatRoom {
 // incoming is a channel of messages from each peer
 // peerLock handles atomicity of adding and removing peers
 // peers is a list of peers in the chat room
-type ChatRoom struct {
+type chatRoom struct {
 	incoming   chan *Message
 	broadcasts chan string
 	peerLock   *sync.Mutex
@@ -25,17 +35,17 @@ type ChatRoom struct {
 }
 
 // Broadcast sends message to all peers
-func (room *ChatRoom) Broadcast(msg string) {
+func (room *chatRoom) Broadcast(msg string) {
 	room.broadcasts <- msg
 }
 
 // Receive returns the next message from any peer
-func (room *ChatRoom) Receive() *Message {
+func (room *chatRoom) Receive() *Message {
 	return <-room.incoming
 }
 
 // AddPeer adds peer to chat room with given info
-func (room *ChatRoom) AddPeer(peer Peer) {
+func (room *chatRoom) AddPeer(peer Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	room.peers = append(room.peers, peer)
@@ -60,7 +70,7 @@ func (room *ChatRoom) AddPeer(peer Peer) {
 }
 
 // RemovePeer removes peer from chat room with given info
-func (room *ChatRoom) RemovePeer(peer Peer) {
+func (room *chatRoom) RemovePeer(peer Peer) {
 	room.peerLock.Lock()
 	defer room.peerLock.Unlock()
 	iToRemove := -1
@@ -72,4 +82,9 @@ func (room *ChatRoom) RemovePeer(peer Peer) {
 	if i := iToRemove; i != -1 {
 		room.peers = append(room.peers[:i], room.peers[i+1:]...)
 	}
+}
+
+// Peers returns a list of peers
+func (room *chatRoom) Peers() []Peer {
+	return room.peers
 }

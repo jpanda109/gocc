@@ -59,7 +59,7 @@ func NewController(addr, name string) *Controller {
 type Controller struct {
 	self       comm.Peer
 	cHandler   *comm.ConnHandler
-	chatroom   *comm.ChatRoom
+	chatroom   comm.ChatRoom
 	window     *view.ChatWindow
 	editBuffer []rune
 	quit       chan bool

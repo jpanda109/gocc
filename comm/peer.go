@@ -14,8 +14,8 @@ func idIncrementer() int {
 	return curID
 }
 
-// newPeer returns a new peer
-func newPeer(r io.Reader, w io.Writer, addr string, name string) *peer {
+// NewPeer returns a new peer
+func NewPeer(r io.Reader, w io.Writer, addr string, name string) Peer {
 	decoder := gob.NewDecoder(r)
 	encoder := gob.NewEncoder(w)
 	newPeer := &peer{
