@@ -3,8 +3,47 @@ package comm
 import (
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"io"
 )
+
+// MsgGob is a gob which used to send necessary data through tcp sockets
+// Trusted information is not contained due to possibility of unreliable clients
+// action is the type of message being sent
+// body is the body of the message being sent
+type MsgGob struct {
+	Action Action
+	Body   string
+}
+
+// Action represents the type of action that the message represents
+type Action int
+
+const (
+	// Public indicates the message is broadcasted to all
+	Public Action = iota
+	// Private indicates the message was sent to one peer
+	Private
+	// Whitelist indicates a modification to the chatroom whitelist
+	Whitelist
+)
+
+// Message contains information about a message received from a peer
+// This struct, unlike MsgGob, is meant to be passed internally within the
+// application with trusted information
+// Sender is a pointer to the local peer instance which sent it
+// info contains the message infomation such as the action type and body
+type Message struct {
+	SenderID   int
+	SenderName string
+	Info       *MsgGob
+}
+
+// String returns a human readable form of a Message
+func (msg *Message) String() string {
+	return fmt.Sprintf("%s (%v) > %s", msg.SenderName, msg.Info.Action,
+		msg.Info.Body)
+}
 
 var curID int
 
