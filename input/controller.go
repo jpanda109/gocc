@@ -124,6 +124,27 @@ func (c *Controller) listenEvents(wg *sync.WaitGroup) {
 	log.Println("controller no longer listening")
 }
 
+func (c *Controller) handleInput() {
+	if len(c.editBuffer) == 0 {
+		return
+	}
+	_, _, isCommand := parseInput(string(c.editBuffer))
+	if isCommand {
+		return
+	}
+	c.chatroom.Broadcast(string(c.editBuffer))
+	c.window.MsgQ <- &comm.Message{
+		SenderID:   c.self.ID(),
+		SenderName: c.self.Name(),
+		Info: &comm.MsgGob{
+			Action: comm.Public,
+			Body:   string(c.editBuffer),
+		},
+	}
+	c.editBuffer = []rune{}
+	c.window.EditBuffer <- c.editBuffer
+}
+
 // handleEvents dictates how user input is treated and what actions to take
 func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 	for event := range eventQueue {
@@ -133,20 +154,7 @@ func (c *Controller) handleEvents(eventQueue chan termbox.Event) {
 				c.window.Stop()
 				c.quit <- true
 			case termbox.KeyEnter:
-				if len(c.editBuffer) == 0 {
-					continue
-				}
-				c.chatroom.Broadcast(string(c.editBuffer))
-				c.window.MsgQ <- &comm.Message{
-					SenderID:   c.self.ID(),
-					SenderName: c.self.Name(),
-					Info: &comm.MsgGob{
-						Action: comm.Public,
-						Body:   string(c.editBuffer),
-					},
-				}
-				c.editBuffer = []rune{}
-				c.window.EditBuffer <- c.editBuffer
+				c.handleInput()
 			case termbox.KeyBackspace:
 				if curlen := len(c.editBuffer); curlen > 0 {
 					c.editBuffer = append([]rune{}, c.editBuffer[:curlen-1]...)

@@ -7,16 +7,17 @@ import (
 
 // Friend contains info about a friend
 // Name is a nickname for the friend
-// Addr is the ip + port at which the friend is located
+// Addrs is the ip + port at which the friend is located
 type Friend struct {
-	Name string
-	Addr string
+	Name        string
+	Description string
+	Addrs       []string
 }
 
 // Config holds the configuration data from config file
 type Config struct {
 	Friends []*Friend
-	Port    string
+	Ports   []string
 	Name    string
 }
 
@@ -27,20 +28,20 @@ var config *Config
 func Init() error {
 	config = &Config{
 		Friends: make([]*Friend, 0),
-		Port:    "8080",
-		Name:    "weab",
+		Ports:   []string{"8080"},
+		Name:    "anon",
 	}
 	return readConfig()
 }
 
 // GetPort returns the default port
-func GetPort() string {
-	return config.Port
+func GetPort() []string {
+	return config.Ports
 }
 
-// SetPort persists the port to the config file
-func SetPort(port string) {
-	config.Port = port
+// AddPort persists the port to the config file
+func AddPort(port string) {
+	config.Ports = append(config.Ports, port)
 	saveConfig()
 }
 
