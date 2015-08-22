@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -9,19 +10,24 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-const msglen = 256
-
-func setLogger() {
-	fo, _ := os.Create("log.txt")
-	log.SetOutput(fo)
+// setLogger either logs to a log file or discards log statements depending
+// on the passed in boolean
+func setLogger(debug bool) {
+	if debug {
+		fo, _ := os.Create("log.txt")
+		log.SetOutput(fo)
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
 }
 
+// startApp creates the controller and runs the application
 func startApp(port string, debug bool, connect string, name string) {
 	listenerAddr := ":" + port
 	if debug {
-		setLogger()
 		listenerAddr = "localhost" + listenerAddr
 	}
+	setLogger(debug)
 	controller := input.NewController(listenerAddr, name)
 	if connect != "" {
 		err := controller.Connect(connect)
@@ -30,13 +36,14 @@ func startApp(port string, debug bool, connect string, name string) {
 			return
 		}
 	}
-	log.Println("started from the bottom")
 	termbox.Init()
 	defer termbox.Close()
 	wg := controller.Start()
 	wg.Wait()
 }
 
+// main simply handles command line flag processing and then calls
+// the startApp function with the correct parameters
 func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{

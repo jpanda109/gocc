@@ -73,8 +73,6 @@ func (window *ChatWindow) listenEdits() {
 			termbox.SetCell(x, window.h-1, ' ', termbox.ColorBlack, termbox.ColorBlack)
 		}
 		for x, ch := range b {
-			log.Println(x)
-			log.Println(window.h - 1)
 			termbox.SetCell(x, window.h-1, ch, termbox.ColorWhite, termbox.ColorBlack)
 		}
 		termbox.Flush()
