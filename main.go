@@ -53,7 +53,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "port, p",
-			Value: "8080",
+			Value: config.Port(),
 			Usage: "Port listen to",
 		},
 		cli.BoolFlag{
@@ -67,11 +67,12 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "name, n",
-			Value: "anon",
+			Value: config.Name(),
 			Usage: "Name with which to identify",
 		},
 	}
 	app.Action = func(c *cli.Context) {
+		config.SetDebug(c.BoolT("debug"))
 		startApp(
 			c.String("port"),
 			c.BoolT("debug"),

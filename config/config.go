@@ -18,32 +18,56 @@ type Friend struct {
 // Config holds the configuration data from config file
 type Config struct {
 	Friends []*Friend
-	Ports   []string
+	Port    string
 	Name    string
 }
 
 var config *Config
+var save func() error
 
 // Init instantiates the configuration object
 // Should be called at the beginning of program and only once.
 func Init() error {
 	config = &Config{
 		Friends: make([]*Friend, 0),
-		Ports:   []string{"8080"},
+		Port:    "8080",
 		Name:    "anon",
 	}
+	save = saveConfig
 	return readConfig()
 }
 
-// Port returns the default port
-func Port() []string {
-	return config.Ports
+// SetDebug sets the config package to debug mode
+func SetDebug(debug bool) {
+	if debug {
+		save = func() error {
+			return nil
+		}
+	} else {
+		save = saveConfig
+	}
 }
 
-// AddPort persists the port to the config file
-func AddPort(port string) {
-	config.Ports = append(config.Ports, port)
-	saveConfig()
+// Name returns the default name
+func Name() string {
+	return config.Name
+}
+
+// SetName persists the name and overwrites the current config file
+func SetName(name string) {
+	config.Name = name
+	save()
+}
+
+// Port returns the default port
+func Port() string {
+	return config.Port
+}
+
+// SetPort persists the port to the config file
+func SetPort(port string) {
+	config.Port = port
+	save()
 }
 
 // Friends returns your list of friends
@@ -54,7 +78,7 @@ func Friends() []*Friend {
 // AddFriend persists the friend to config file
 func AddFriend(friend *Friend) {
 	config.Friends = append(config.Friends, friend)
-	saveConfig()
+	save()
 }
 
 func saveConfig() error {
