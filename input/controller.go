@@ -98,7 +98,14 @@ func (c *Controller) Connect(addr string) error {
 func (c *Controller) handleMessages() {
 	for {
 		msg := c.chatroom.Receive()
-		c.window.MsgQ <- msg
+		if msg.Info.Action == comm.Public {
+			c.window.MsgQ <- &view.Message{
+				SenderID:   msg.SenderID,
+				SenderName: msg.SenderName,
+				Type:       view.Public,
+				Body:       msg.Info.Body,
+			}
+		}
 	}
 }
 
@@ -147,13 +154,11 @@ func (c *Controller) handleInput() {
 		}
 	} else {
 		c.chatroom.Broadcast(string(c.editBuffer))
-		c.window.MsgQ <- &comm.Message{
+		c.window.MsgQ <- &view.Message{
 			SenderID:   c.self.ID(),
 			SenderName: c.self.Name(),
-			Info: &comm.MsgGob{
-				Action: comm.Public,
-				Body:   string(c.editBuffer),
-			},
+			Type:       view.Public,
+			Body:       string(c.editBuffer),
 		}
 	}
 	c.editBuffer = []rune{}
