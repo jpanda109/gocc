@@ -11,7 +11,8 @@ import (
 type Friend struct {
 	Name        string
 	Description string
-	Addrs       []string
+	Addr        string
+	Ports       []string
 }
 
 // Config holds the configuration data from config file
@@ -34,8 +35,8 @@ func Init() error {
 	return readConfig()
 }
 
-// GetPort returns the default port
-func GetPort() []string {
+// Port returns the default port
+func Port() []string {
 	return config.Ports
 }
 
@@ -45,8 +46,8 @@ func AddPort(port string) {
 	saveConfig()
 }
 
-// GetFriends returns your list of friends
-func GetFriends() []*Friend {
+// Friends returns your list of friends
+func Friends() []*Friend {
 	return config.Friends
 }
 

@@ -5,9 +5,11 @@ package input
 
 import (
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/jpanda109/gocc/comm"
+	"github.com/jpanda109/gocc/config"
 	"github.com/jpanda109/gocc/view"
 	"github.com/nsf/termbox-go"
 )
@@ -104,7 +106,7 @@ func (c *Controller) handleMessages() {
 func (c *Controller) handleConns() {
 	c.cHandler.Listen()
 	for {
-		peer := c.cHandler.GetPeer()
+		peer := c.cHandler.Peer()
 		c.chatroom.AddPeer(peer)
 	}
 }
@@ -128,18 +130,31 @@ func (c *Controller) handleInput() {
 	if len(c.editBuffer) == 0 {
 		return
 	}
-	_, _, isCommand := parseInput(string(c.editBuffer))
-	if isCommand {
-		return
-	}
-	c.chatroom.Broadcast(string(c.editBuffer))
-	c.window.MsgQ <- &comm.Message{
-		SenderID:   c.self.ID(),
-		SenderName: c.self.Name(),
-		Info: &comm.MsgGob{
-			Action: comm.Public,
-			Body:   string(c.editBuffer),
-		},
+	tokens := strings.Split(string(c.editBuffer), " ")
+	if tokens[0][0] == '/' {
+		switch tokens[0] {
+		case "/save":
+		case "/whitelistfriends":
+			for _, f := range config.Friends() {
+				c.cHandler.Whitelist(f.Addr)
+			}
+		case "/whitelist":
+			addrs := tokens[1:]
+			for _, addr := range addrs {
+				c.cHandler.Whitelist(addr)
+			}
+		case "/friends":
+		}
+	} else {
+		c.chatroom.Broadcast(string(c.editBuffer))
+		c.window.MsgQ <- &comm.Message{
+			SenderID:   c.self.ID(),
+			SenderName: c.self.Name(),
+			Info: &comm.MsgGob{
+				Action: comm.Public,
+				Body:   string(c.editBuffer),
+			},
+		}
 	}
 	c.editBuffer = []rune{}
 	c.window.EditBuffer <- c.editBuffer

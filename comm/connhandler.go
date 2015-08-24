@@ -14,16 +14,20 @@ func NewConnHandler(addr string, name string, chatroom ChatRoom) *ConnHandler {
 		name,
 		make(chan Peer),
 		chatroom,
+		make(chan string),
+		[]string{},
 	}
 	return handler
 }
 
 // ConnHandler listens for new connections and connets to new ones
 type ConnHandler struct {
-	addr     string
-	name     string
-	newPeers chan Peer
-	chatroom ChatRoom
+	addr       string
+	name       string
+	newPeers   chan Peer
+	chatroom   ChatRoom
+	whitelists chan string
+	whitelist  []string
 }
 
 // String returns string repr of conn handler
@@ -31,14 +35,14 @@ func (handler *ConnHandler) String() string {
 	return handler.addr + "," + handler.name
 }
 
-// GetPeer returns the next peer that connects
-func (handler *ConnHandler) GetPeer() Peer {
+// Peer returns the next peer that connects
+func (handler *ConnHandler) Peer() Peer {
 	return <-handler.newPeers
 }
 
-// Listen begins listener
-func (handler *ConnHandler) Listen() {
-	go handler.listenConns()
+// Whitelist adds an ip address to the whitelist
+func (handler *ConnHandler) Whitelist(addr string) {
+	handler.whitelists <- addr
 }
 
 // Dial connects to server at address
@@ -69,6 +73,17 @@ func (handler *ConnHandler) Dial(addr string) ([]Peer, error) {
 		peers = append(peers, NewPeer(c, c, info[0], info[1]))
 	}
 	return peers, nil
+}
+
+// Listen begins listener
+func (handler *ConnHandler) Listen() {
+	go handler.listenConns()
+}
+
+func (handler *ConnHandler) handleWhitelists() {
+	for addr := range handler.whitelists {
+		handler.whitelist = append(handler.whitelist, addr)
+	}
 }
 
 func (handler *ConnHandler) listenConns() {

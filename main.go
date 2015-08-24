@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
+	"github.com/jpanda109/gocc/config"
 	"github.com/jpanda109/gocc/input"
 	"github.com/nsf/termbox-go"
 )
@@ -44,7 +45,10 @@ func startApp(port string, debug bool, connect string, name string) {
 
 // main simply handles command line flag processing and then calls
 // the startApp function with the correct parameters
+// It will pass in the appropriate flags depending on both the config file
+// and command line flags, with command line flags having higher precedence
 func main() {
+	config.Init()
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
