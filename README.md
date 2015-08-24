@@ -34,3 +34,9 @@ User 1:
 
 User 2:
 > gocc -p 7000 -n user2 -c <remote_ip>:8080
+
+#### TODO
+Add additional features such as git-style commands for different application
+contexts like viewing friends list  
+Refactor structure to have a directory per feature, with each feature having
+its own view, controller, model
