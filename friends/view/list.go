@@ -2,8 +2,6 @@ package friends
 
 import "github.com/jpanda109/gocc/config"
 
-// termbox will be needed, just not using it yet
-
 // ListView defines view where the user can view saved friends along
 // with their basic information
 // w is the allocated width of the screen
@@ -16,6 +14,18 @@ type ListView struct {
 	friends []*config.Friend
 	curline int
 	topline int
+}
+
+// NewListView is a future-proofed ListView initializer
+func NewListView() *ListView {
+	view := &ListView{
+		w:       0,
+		h:       0,
+		friends: []*config.Friend{},
+		curline: 0,
+		topline: 0,
+	}
+	return view
 }
 
 // Start initializes and runs this screen
