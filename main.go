@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
+	"github.com/jpanda109/gocc/app"
 	"github.com/jpanda109/gocc/config"
+	"github.com/jpanda109/gocc/friends"
 	"github.com/jpanda109/gocc/input"
 	"github.com/nsf/termbox-go"
 )
@@ -43,6 +45,15 @@ func startApp(port string, debug bool, connect string, name string) {
 	wg.Wait()
 }
 
+func start(screen app.Screen) {
+	termbox.Init()
+	defer termbox.Close()
+	manager := &app.Manager{}
+	screen.SetManager(manager)
+	wg, _ := manager.Start(screen)
+	wg.Wait()
+}
+
 // main simply handles command line flag processing and then calls
 // the startApp function with the correct parameters
 // It will pass in the appropriate flags depending on both the config file
@@ -50,6 +61,8 @@ func startApp(port string, debug bool, connect string, name string) {
 func main() {
 	config.Init()
 	app := cli.NewApp()
+	config.SetDebug(true)
+	setLogger(true)
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "port, p",
@@ -71,8 +84,30 @@ func main() {
 			Usage: "Name with which to identify",
 		},
 	}
+	app.Commands = []cli.Command{
+		{
+			Name:    "friends",
+			Aliases: []string{"f"},
+			Usage:   "display friends",
+			Action: func(c *cli.Context) {
+				// termbox.Init()
+				// defer termbox.Close()
+				// events := make(chan termbox.Event)
+				// go func() {
+				// 	for {
+				// 		events <- termbox.PollEvent()
+				// 	}
+				// }()
+				// for e := range events {
+				// 	if e.Key == termbox.KeyCtrlC {
+				// 		return
+				// 	}
+				// }
+				start(&friends.FriendApp{})
+			},
+		},
+	}
 	app.Action = func(c *cli.Context) {
-		config.SetDebug(c.BoolT("debug"))
 		startApp(
 			c.String("port"),
 			c.BoolT("debug"),

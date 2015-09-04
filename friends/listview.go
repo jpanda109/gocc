@@ -2,6 +2,8 @@ package friends
 
 import "github.com/jpanda109/gocc/config"
 
+import "github.com/nsf/termbox-go"
+
 // ListView defines view where the user can view saved friends along
 // with their basic information
 // w is the allocated width of the screen
@@ -28,9 +30,21 @@ func NewListView() *ListView {
 	return view
 }
 
+// SetFriends is simply a publicly accessible mutator method for friends
+func (view *ListView) SetFriends(friends []*config.Friend) {
+	view.friends = friends
+}
+
 // Start initializes and runs this screen
 func (view *ListView) Start(w, h int) {
 	view.w, view.h = w, h
+	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
+	for y, friend := range view.friends {
+		for x, c := range friend.Name {
+			termbox.SetCell(x, y, rune(c), termbox.ColorWhite, termbox.ColorBlack)
+		}
+	}
+	termbox.Flush()
 }
 
 // Resize resets the ListView object's w and h attributes to match the given w
