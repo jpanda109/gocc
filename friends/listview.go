@@ -38,13 +38,47 @@ func (view *ListView) SetFriends(friends []*config.Friend) {
 // Start initializes and runs this screen
 func (view *ListView) Start(w, h int) {
 	view.w, view.h = w, h
+	view.Refresh()
+}
+
+// Refresh refreshes the screen based on curline and topline
+func (view *ListView) Refresh() {
 	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
 	for y, friend := range view.friends {
 		for x, c := range friend.Name {
-			termbox.SetCell(x, y, rune(c), termbox.ColorWhite, termbox.ColorBlack)
+			bgColor := termbox.ColorBlack
+			fgColor := termbox.ColorWhite
+			if view.curline == y {
+				bgColor = termbox.ColorMagenta
+			}
+			termbox.SetCell(x, y, rune(c), fgColor, bgColor)
 		}
 	}
 	termbox.Flush()
+}
+
+// Direction is a typedef for how to move the cursor
+type Direction int
+
+const (
+	// Up moves cursor up
+	Up Direction = iota
+	// Down moves cursor down
+	Down
+)
+
+// MoveCursor moves the cursor in the direction specified if possible
+func (view *ListView) MoveCursor(dir Direction) {
+	switch dir {
+	case Up:
+		if view.curline > 0 {
+			view.curline--
+		}
+	case Down:
+		if view.curline < view.h-1 {
+			view.curline++
+		}
+	}
 }
 
 // Resize resets the ListView object's w and h attributes to match the given w
