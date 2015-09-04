@@ -30,14 +30,9 @@ func NewListView() *ListView {
 	return view
 }
 
-// SetFriends is simply a publicly accessible mutator method for friends
-func (view *ListView) SetFriends(friends []*config.Friend) {
-	view.friends = friends
-}
-
 // Start initializes and runs this screen
-func (view *ListView) Start(w, h int) {
-	view.w, view.h = w, h
+func (view *ListView) Start(w, h int, friends []*config.Friend) {
+	view.w, view.h, view.friends = w, h, friends
 	view.Refresh()
 }
 
@@ -79,6 +74,7 @@ func (view *ListView) MoveCursor(dir Direction) {
 			view.curline++
 		}
 	}
+	view.Refresh()
 }
 
 // Resize resets the ListView object's w and h attributes to match the given w

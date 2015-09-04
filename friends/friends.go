@@ -22,8 +22,8 @@ type FriendApp struct {
 func (app *FriendApp) Start() {
 	app.quit = make(chan bool)
 	app.listView = NewListView()
-	app.listView.friends = config.Friends()
-	app.listView.Start(termbox.Size())
+	w, h := termbox.Size()
+	app.listView.Start(w, h, config.Friends())
 	go app.listenEvents()
 }
 
