@@ -8,9 +8,40 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jpanda109/gocc/app"
 	"github.com/jpanda109/gocc/config"
 	"github.com/nsf/termbox-go"
 )
+
+// App defines an struct which matches the Screen interface to be used
+// by the app Manager struct
+type App struct {
+	Manager *app.Manager
+	Addr    string
+	Name    string
+	Connect bool
+	CPort   string
+}
+
+// Start begins this feature of the application
+func (app *App) Start() {
+	controller := NewController(app.Addr, app.Name)
+	if app.Connect {
+		controller.Connect(app.CPort)
+	}
+	wg := controller.Start()
+	wg.Wait()
+	app.Manager.Quit()
+}
+
+// Stop quits the current app
+// need to add an actual stop to the controller
+func (app *App) Stop() {}
+
+// SetManager sets the manager
+func (app *App) SetManager(manager *app.Manager) {
+	app.Manager = manager
+}
 
 type ownPeer struct {
 	addr string

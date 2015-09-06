@@ -36,7 +36,7 @@ func (m *Manager) Start(screen Screen) (*sync.WaitGroup, error) {
 func (m *Manager) SwitchScreeen(screen Screen) {
 	m.screen.Stop()
 	m.screen = screen
-	m.screen.Start()
+	go m.screen.Start()
 }
 
 // Quit closes the current screen and quits the application

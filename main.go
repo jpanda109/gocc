@@ -31,18 +31,33 @@ func startApp(port string, debug bool, connect string, name string) {
 		listenerAddr = "localhost" + listenerAddr
 	}
 	setLogger(debug)
-	controller := chat.NewController(listenerAddr, name)
-	if connect != "" {
-		err := controller.Connect(connect)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	manager := &app.Manager{}
+	chatApp := &chat.App{
+		Manager: manager,
+		Addr:    listenerAddr,
+		Name:    name,
 	}
 	termbox.Init()
 	defer termbox.Close()
-	wg := controller.Start()
+	wg, _ := manager.Start(chatApp)
 	wg.Wait()
+	// listenerAddr := ":" + port
+	// if debug {
+	// 	listenerAddr = "localhost" + listenerAddr
+	// }
+	// setLogger(debug)
+	// controller := chat.NewController(listenerAddr, name)
+	// if connect != "" {
+	// 	err := controller.Connect(connect)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 		return
+	// 	}
+	// }
+	// termbox.Init()
+	// defer termbox.Close()
+	// wg := controller.Start()
+	// wg.Wait()
 }
 
 func start(screen app.Screen) {
@@ -90,19 +105,6 @@ func main() {
 			Aliases: []string{"f"},
 			Usage:   "display friends",
 			Action: func(c *cli.Context) {
-				// termbox.Init()
-				// defer termbox.Close()
-				// events := make(chan termbox.Event)
-				// go func() {
-				// 	for {
-				// 		events <- termbox.PollEvent()
-				// 	}
-				// }()
-				// for e := range events {
-				// 	if e.Key == termbox.KeyCtrlC {
-				// 		return
-				// 	}
-				// }
 				start(&friends.FriendApp{})
 			},
 		},
