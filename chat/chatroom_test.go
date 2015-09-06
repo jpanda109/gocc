@@ -1,4 +1,4 @@
-package comm
+package chat
 
 import "testing"
 

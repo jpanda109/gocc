@@ -7,9 +7,9 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jpanda109/gocc/app"
+	"github.com/jpanda109/gocc/chat"
 	"github.com/jpanda109/gocc/config"
 	"github.com/jpanda109/gocc/friends"
-	"github.com/jpanda109/gocc/input"
 	"github.com/nsf/termbox-go"
 )
 
@@ -31,7 +31,7 @@ func startApp(port string, debug bool, connect string, name string) {
 		listenerAddr = "localhost" + listenerAddr
 	}
 	setLogger(debug)
-	controller := input.NewController(listenerAddr, name)
+	controller := chat.NewController(listenerAddr, name)
 	if connect != "" {
 		err := controller.Connect(connect)
 		if err != nil {

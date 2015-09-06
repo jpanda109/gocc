@@ -1,4 +1,4 @@
-package comm
+package chat
 
 import (
 	"encoding/gob"
@@ -20,8 +20,8 @@ type MsgGob struct {
 type Action int
 
 const (
-	// Public indicates the message is broadcasted to all
-	Public Action = iota
+	// Broadcast indicates the message is broadcasted to all
+	Broadcast Action = iota
 	// Private indicates the message was sent to one peer
 	Private
 	// Whitelist indicates a modification to the chatroom whitelist

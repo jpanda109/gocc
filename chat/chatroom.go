@@ -1,10 +1,10 @@
-package comm
+package chat
 
 import "sync"
 
-// ChatRoom defines an interface which can receive and broadcast messages to
+// Room defines an interface which can receive and broadcast messages to
 // a number of peers
-type ChatRoom interface {
+type Room interface {
 	Broadcast(msg string)
 	Receive() *Message
 	AddPeer(peer Peer)
@@ -12,8 +12,8 @@ type ChatRoom interface {
 	Peers() []Peer
 }
 
-// NewChatRoom creates and returns a pointer to chat room
-func NewChatRoom() ChatRoom {
+// NewRoom creates and returns a pointer to chat room
+func NewRoom() Room {
 	room := &chatRoom{
 		make(chan *Message),
 		make(chan string),
@@ -23,7 +23,7 @@ func NewChatRoom() ChatRoom {
 	return room
 }
 
-// ChatRoom sends and receives messages to peers
+// Room sends and receives messages to peers
 // incoming is a channel of messages from each peer
 // peerLock handles atomicity of adding and removing peers
 // peers is a list of peers in the chat room
@@ -63,7 +63,7 @@ func (room *chatRoom) AddPeer(peer Peer) {
 		for {
 			msg := <-room.broadcasts
 			for _, peer := range room.peers {
-				peer.Send(&MsgGob{Public, msg})
+				peer.Send(&MsgGob{Broadcast, msg})
 			}
 		}
 	}()

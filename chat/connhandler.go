@@ -1,4 +1,4 @@
-package comm
+package chat
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 )
 
 // NewConnHandler creates a new conn handler
-func NewConnHandler(addr string, name string, chatroom ChatRoom) *ConnHandler {
+func NewConnHandler(addr string, name string, chatroom Room) *ConnHandler {
 	handler := &ConnHandler{
 		addr,
 		name,
@@ -25,7 +25,7 @@ type ConnHandler struct {
 	addr       string
 	name       string
 	newPeers   chan Peer
-	chatroom   ChatRoom
+	chatroom   Room
 	whitelists chan string
 	whitelist  []string
 }

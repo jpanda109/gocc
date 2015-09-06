@@ -1,4 +1,4 @@
-package input
+package chat
 
 // This file defines the Controller, which handles user input and
 // actions received from peers
@@ -8,9 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jpanda109/gocc/comm"
 	"github.com/jpanda109/gocc/config"
-	"github.com/jpanda109/gocc/view"
 	"github.com/nsf/termbox-go"
 )
 
@@ -27,11 +25,11 @@ func (p *ownPeer) Name() string {
 	return p.name
 }
 
-func (p *ownPeer) Send(msg *comm.MsgGob) error {
+func (p *ownPeer) Send(msg *MsgGob) error {
 	return nil
 }
 
-func (p *ownPeer) Receive() (*comm.MsgGob, error) {
+func (p *ownPeer) Receive() (*MsgGob, error) {
 	return nil, nil
 }
 
@@ -41,12 +39,12 @@ func (p *ownPeer) String() string {
 
 // NewController returns reference to Controller object
 func NewController(addr, name string) *Controller {
-	chatroom := comm.NewChatRoom()
+	chatroom := NewRoom()
 	controller := &Controller{
 		&ownPeer{addr, name},
-		comm.NewConnHandler(addr, name, chatroom),
+		NewConnHandler(addr, name, chatroom),
 		chatroom,
-		view.NewChatWindow(),
+		newChatWindow(),
 		make([]rune, 0),
 		make(chan bool),
 	}
@@ -59,10 +57,10 @@ func NewController(addr, name string) *Controller {
 // editBuffer is the current buffer that the user sends upon choosing so
 // quit is a channel signalling when the user decides to stop the application
 type Controller struct {
-	self       comm.Peer
-	cHandler   *comm.ConnHandler
-	chatroom   comm.ChatRoom
-	window     *view.ChatWindow
+	self       Peer
+	cHandler   *ConnHandler
+	chatroom   Room
+	window     *chatWindow
 	editBuffer []rune
 	quit       chan bool
 }
@@ -98,11 +96,11 @@ func (c *Controller) Connect(addr string) error {
 func (c *Controller) handleMessages() {
 	for {
 		msg := c.chatroom.Receive()
-		if msg.Info.Action == comm.Public {
-			c.window.MsgQ <- &view.Message{
+		if msg.Info.Action == Broadcast {
+			c.window.MsgQ <- &iMessage{
 				SenderID:   msg.SenderID,
 				SenderName: msg.SenderName,
-				Type:       view.Public,
+				Type:       Public,
 				Body:       msg.Info.Body,
 			}
 		}
@@ -154,10 +152,10 @@ func (c *Controller) handleInput() {
 		}
 	} else {
 		c.chatroom.Broadcast(string(c.editBuffer))
-		c.window.MsgQ <- &view.Message{
+		c.window.MsgQ <- &iMessage{
 			SenderID:   c.self.ID(),
 			SenderName: c.self.Name(),
-			Type:       view.Public,
+			Type:       Public,
 			Body:       string(c.editBuffer),
 		}
 	}

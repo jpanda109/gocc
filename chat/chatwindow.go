@@ -1,6 +1,6 @@
-package view
+package chat
 
-// This file implements the ChatWindow, which simply displays messages
+// This file implements the chatWindow, which simply displays messages
 // along with the user's edit bar onto the terminal
 
 import (
@@ -22,50 +22,50 @@ const (
 	Internal
 )
 
-// Message defines a struct which contains the necessary information to display
+// iMessage defines a struct which contains the necessary information to display
 // text correctly
-type Message struct {
+type iMessage struct {
 	SenderID   int
 	SenderName string
 	Type       MType
 	Body       string
 }
 
-// NewChatWindow creates a new chat window
-func NewChatWindow() *ChatWindow {
+// NewchatWindow creates a new chat window
+func newChatWindow() *chatWindow {
 	// Change such that start is public, move width and height, etc into
 	// the start function, add listener for window resizing
-	window := &ChatWindow{
+	window := &chatWindow{
 		0,
 		0,
 		make(chan []rune),
-		make(chan *Message),
-		make([]*Message, 0),
+		make(chan *iMessage),
+		make([]*iMessage, 0),
 	}
 	return window
 }
 
-// ChatWindow displays current editing buffer and messages
+// chatWindow displays current editing buffer and messages
 // w is the current width of the terminal
 // h is the current height of the terminal
 // EditBuffer receives the current editing buffer from a controller
 // MsgQ receives messages to display
 // msgs is a list of messages needing to be displayed on the terminal
-type ChatWindow struct {
+type chatWindow struct {
 	w          int
 	h          int
 	EditBuffer chan []rune
-	MsgQ       chan *Message
-	msgs       []*Message
+	MsgQ       chan *iMessage
+	msgs       []*iMessage
 }
 
 // Start begins listeners
-func (window *ChatWindow) Start() {
+func (window *chatWindow) Start() {
 	w, h := termbox.Size()
 	window.w, window.h = w, h
-	var msgs []*Message
+	var msgs []*iMessage
 	for i := 0; i < h-2; i++ {
-		msgs = append(msgs, &Message{
+		msgs = append(msgs, &iMessage{
 			SenderID:   -1,
 			SenderName: "",
 			Type:       Public,
@@ -78,7 +78,7 @@ func (window *ChatWindow) Start() {
 }
 
 // Stop closes channels and clears screen
-func (window *ChatWindow) Stop() {
+func (window *chatWindow) Stop() {
 	close(window.EditBuffer)
 	close(window.MsgQ)
 	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
@@ -87,7 +87,7 @@ func (window *ChatWindow) Stop() {
 
 // listenEdits begins listening on the EditBuffer channel, displays onto screen
 // accordingly
-func (window *ChatWindow) listenEdits() {
+func (window *chatWindow) listenEdits() {
 	log.Println("Listening to edits")
 	for b := range window.EditBuffer {
 		for x := 0; x < window.w; x++ {
@@ -102,9 +102,9 @@ func (window *ChatWindow) listenEdits() {
 
 // listenMsgs begins listening on the MsgQ channel and appends then to the
 // msgs buffer accordingly, and then displays the messages onto the terminal
-func (window *ChatWindow) listenMsgs() {
+func (window *chatWindow) listenMsgs() {
 	for m := range window.MsgQ {
-		window.msgs = append([]*Message{m}, window.msgs[:window.h-3]...)
+		window.msgs = append([]*iMessage{m}, window.msgs[:window.h-3]...)
 		y := window.h - 3
 		for _, msg := range window.msgs {
 			if msg.SenderID == -1 {
